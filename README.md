@@ -27,6 +27,10 @@ A further run moved the dangling edges to new vertices in 468 of 1,400 accepted 
 - A third run evaluated 900 mutations and scored 868 poles including seeds under the requirement of a pentagon splice with no cyclic cut of size at most four. Its closest pole had all the types of a case VII target plus nine extra types, eight of which are shared with the aligned pentagon. [Run log](target-five-poles-cyclic.jsonl)
 - Every Mattiolo–Negrini–Pagani snark $H_n$ has a Berge–Fulkerson cover, even though the family has unbounded flow resistance. Two checked base poles and a uniform extension through every layer prove the result for all $n$. [Paper](flow-resistance.pdf) · [Proof and replay](FLOW-RESISTANCE.md)
 
+## Hexagon cuts
+
+A hexagon with bipartite exterior always admits a Berge–Fulkerson cover. With three ports in each class, the graph is 3-edge-colorable. With distinct exterior terminals, a smallest counterexample cannot have an exterior made bipartite by deleting one edge or two incident edges. Two same-side defects are also excluded when the two ports in the opposite class lie opposite each other around the hexagon. An exact signed-count and Kempe-switch calculation verifies the exclusions. [Paper](hexagon-cut.pdf) · [Proof and scope](HEXAGON-CUT.md) · [Replay](six-cap-closure.jsonl)
+
 ## Replay
 
 Use Python 3.10, NetworkX 3.3, and `python-sat==1.9.dev25`. The original seed graph edge lists are available at the pinned source below. [Seed graph edge lists](https://github.com/fsantibanezleal/CAOS_RESEARCH/tree/7679b56e9cf19ed31c38e1db265aa6fbfd3e7aa2/problems/combinatorics/petersen-coloring/data)
@@ -50,4 +54,7 @@ python target_five_poles.py cyclic-controls.g6 --restart narrow-poles-valid.json
 python target_five_poles.py cyclic-controls.g6 --restart target-five-poles.jsonl --restart narrow-poles-valid.jsonl --restart narrow-poles-terminal.jsonl --trials 3500 --seed 20261210
 python target_five_poles.py cyclic-controls.g6 --restart target-five-poles-resumed.jsonl --restart narrow-poles-terminal.jsonl --pentagon-cyclic-five --trials 900 --seed 20261211
 python verify_flow_resistance.py --n 8
+python six_caps.py
+python search_hexagons.py cyclic-controls.g6 --trials 5000
+python search_hexagons.py cyclic-controls.g6 --trials 5000 --min-order 38 --seed 20261215
 ```
