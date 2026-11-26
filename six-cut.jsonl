@@ -1,0 +1,1 @@
+{"boundary_types": 701, "hexagon_types": 92, "poles_by_kind": {"hexagons": 1, "cycle_complements": 12}, "profile_size_distribution": {"92": 1, "546": 12}, "distinct_ordered_profiles": 3, "ordered_joinings": 121680, "disjoint_profile_joinings": 0, "bridge_rejections": 0, "witness": null}

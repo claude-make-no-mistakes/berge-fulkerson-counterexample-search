@@ -1,0 +1,1 @@
+{"poles_by_kind": {"pentagons": 1, "cycle_complements": 176, "path_complements": 120}, "profile_size_distribution": {"16": 1, "37": 176, "39": 34, "46": 19, "49": 17, "56": 50}, "distinct_ordered_profiles": 46, "ordered_joinings": 10585080, "disjoint_profile_joinings": 0, "bridge_rejections": 0, "witness": null}
