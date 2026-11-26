@@ -9,7 +9,7 @@ from random import Random
 
 import networkx as nx
 
-from five_cut import PORTS, TYPES, active_bits, boundary_profile, cycle_poles, glue, relabel_type, validate
+from five_cut import MASK, PORTS, TYPES, active_bits, boundary_profile, cycle_poles, glue, relabel_type, validate
 from search import search
 
 
@@ -68,9 +68,31 @@ def encode(pole, terminals):
             "terminals": [labels[v] for v in terminals]}
 
 
-def scan(sources, trials, seed, export, restart=None):
+def bipartite_restart(half_order):
+    """Delete a three-vertex path from a cubic bipartite graph without 4-cycles."""
+    graph = nx.Graph()
+    graph.add_nodes_from(range(2 * half_order))
+    graph.add_edges_from((u, half_order + (u + shift) % half_order)
+                         for u in range(half_order) for shift in (0, 1, 4))
+    path = {0, half_order, half_order + 1}
+    terminals = sorted(v for u in path for v in graph[u] if v not in path)
+    graph.remove_nodes_from(path)
+    assert len(set(terminals)) == len(terminals) == PORTS and nx.is_connected(graph)
+    profile = boundary_profile(graph, terminals)
+    assert not any(MASK in TYPES[i] for i in active_bits(profile))
+    return {"best_score": list(score(profile, pentagon_orientations())), "best_pole": encode(graph, terminals)}
+
+
+def scan(sources, trials, seed, export, restart=None, avoid_all_ports=False):
     orientations = pentagon_orientations()
     cycle = nx.cycle_graph(PORTS), list(range(PORTS))
+    all_ports = 1 << next(i for i, shape in enumerate(TYPES) if MASK in shape)
+
+    def rank(profile):
+        base = score(profile, orientations)
+        # This type belongs to every pentagon orientation and must disappear.
+        return (bool(profile & all_ports), *base) if avoid_all_ports else base
+
     rng = Random(seed)
     pool = []
     recent = []
@@ -81,20 +103,20 @@ def scan(sources, trials, seed, export, restart=None):
         poles = list(cycle_poles(graph))
         for pole, terminals in rng.sample(poles, min(3, len(poles))):
             profile = boundary_profile(pole, terminals)
-            key = score(profile, orientations)
-            pool.append((key, pole, terminals))
+            pool.append((rank(profile), pole, terminals))
     if restart is not None:
         best = restart["best_pole"]
         pole = nx.from_graph6_bytes(best["graph6"].encode("ascii"))
         terminals = best["terminals"]
         if not admits_bridgeless_splice(pole, terminals):
             raise ValueError("The restart pole always produces a bridge")
-        key = score(boundary_profile(pole, terminals), orientations)
-        assert list(key) == restart["best_score"]
-        pool.append((key, pole, terminals))
+        profile = boundary_profile(pole, terminals)
+        assert list(score(profile, orientations)) == restart["best_score"]
+        pool.append((rank(profile), pole, terminals))
     if not pool:
         raise RuntimeError("No input graph yielded a pentagon complement")
     initial = min(key for key, _, _ in pool)
+    without_all_ports = 0
     for _ in range(trials * 4):
         if sum(scores.values()) == trials:
             break
@@ -116,9 +138,11 @@ def scan(sources, trials, seed, export, restart=None):
             continue
         seen.add(signature)
         profile = boundary_profile(changed, terminals)
-        key = score(profile, orientations)
-        scores[key[0]] += 1
-        if not key[0]:
+        compatible, _ = score(profile, orientations)
+        key = rank(profile)
+        scores[compatible] += 1
+        without_all_ports += not bool(profile & all_ports)
+        if compatible == 0:
             for order, perm in orientations.items():
                 if profile & order:
                     continue
@@ -135,9 +159,12 @@ def scan(sources, trials, seed, export, restart=None):
         recent.append((key, changed, terminals))
         del recent[:-12]
         if sum(scores.values()) % 500 == 0:
-            print(json.dumps({"evaluated": sum(scores.values()), "current_best_score": pool[0][0]}), flush=True)
+            print(json.dumps({"evaluated": sum(scores.values()), "current_best_score": pool[0][0][-2:],
+                              "without_all_ports": without_all_ports}), flush=True)
     best_key, pole, terminals = min(pool, key=lambda record: record[0])
-    return {"seed": seed, "initial_score": initial, "best_score": best_key, "best_pole": encode(pole, terminals),
+    return {"seed": seed, "initial_score": initial[-2:], "best_score": best_key[-2:],
+            "best_pole": encode(pole, terminals), "avoid_all_ports": avoid_all_ports,
+            "without_all_ports": without_all_ports,
             "evaluated": sum(scores.values()), "minimum_common_type_histogram": dict(sorted(scores.items())),
             "bridge_rejections": bridge_rejections, "witness": None}
 
@@ -148,10 +175,18 @@ if __name__ == "__main__":
     parser.add_argument("--trials", type=int, default=600)
     parser.add_argument("--seed", type=int, default=20261127)
     parser.add_argument("--proof-prefix", type=Path, default=Path("pentagon-witness"))
-    parser.add_argument("--restart", type=Path)
+    initial = parser.add_mutually_exclusive_group()
+    initial.add_argument("--restart", type=Path)
+    initial.add_argument("--bipartite-restart", type=int, metavar="HALF_ORDER")
+    parser.add_argument("--avoid-all-ports", action="store_true",
+                        help="Prefer profiles excluding any color that uses all five ports")
     args = parser.parse_args()
     if args.trials < 1:
         parser.error("Expected a positive trial count")
+    if args.bipartite_restart is not None and args.bipartite_restart < 9:
+        parser.error("The bipartite seed requires at least nine vertices on each side")
     graphs = [nx.from_graph6_bytes(line) for line in args.corpus.read_bytes().splitlines()]
     restart = json.loads(args.restart.read_text(encoding="utf-8-sig").splitlines()[-1]) if args.restart else None
-    print(json.dumps(scan(graphs, args.trials, args.seed, args.proof_prefix, restart)), flush=True)
+    if args.bipartite_restart is not None:
+        restart = bipartite_restart(args.bipartite_restart)
+    print(json.dumps(scan(graphs, args.trials, args.seed, args.proof_prefix, restart, args.avoid_all_ports)), flush=True)
