@@ -15,6 +15,8 @@ Every pentagon attachment admits the all-five boundary pattern on the pentagon s
 
 Among 2,200 switched fragments from the bipartite seed campaign, 655 excluded the all-five type. Every one of those fragments still had at least six compatible types for each pentagon attachment. A separate run against the narrow 63-vertex pole found 279 fragments without the all-five type among 1,000 inspected. For those 279 fragments every splice still had a common type.
 
+With the cyclic cut filter and the bipartite restart both enabled, 194 of 600 inspected fragments lacked the all-five type. The minimum across their eligible pentagon attachments was six compatible types.
+
 ## Replay
 
 Use Python 3.10, NetworkX 3.3, and `python-sat==1.9.dev25`. The original seed graph edge lists are available at the pinned source below. [Seed graph edge lists](https://github.com/fsantibanezleal/CAOS_RESEARCH/tree/7679b56e9cf19ed31c38e1db265aa6fbfd3e7aa2/problems/combinatorics/petersen-coloring/data)
@@ -28,6 +30,7 @@ python narrow_poles.py controls.g6 --trials 2500 --seed 20261128 --restart narro
 python narrow_poles.py controls.g6 --trials 2200 --seed 20261201 --avoid-all-ports --bipartite-restart 32
 python narrow_poles.py controls.g6 --trials 1000 --seed 20261202 --avoid-all-ports --bipartite-restart 32 --target-pole narrow-poles-valid.jsonl
 python narrow_poles.py cyclic-controls.g6 --trials 250 --seed 20261203 --cyclic-five
+python narrow_poles.py cyclic-controls.g6 --trials 600 --seed 20261204 --cyclic-five --avoid-all-ports --bipartite-restart 32
 python verify_single_type.py narrow-poles-valid.jsonl certificates/bf-single-type
 drat-trim certificates/bf-single-type.cnf certificates/bf-single-type.drat
 ```
