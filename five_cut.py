@@ -33,6 +33,27 @@ def boundary_types():
 TYPES = boundary_types()
 
 
+def bipartite_profile(pole, terminals):
+    """Compute the five-port profile from the feasible heavy-color matchings."""
+    color = nx.bipartite.color(pole)
+    minority = next(side for side in (0, 1) if sum(color[v] == side for v in terminals) == 1)
+    minority_port = next(i for i, v in enumerate(terminals) if color[v] == minority)
+    majority_ports = [i for i in range(PORTS) if i != minority_port]
+    majority_vertices = {v for v, side in color.items() if side != minority}
+    feasible = set()
+    for first, second in combinations(majority_ports, 2):
+        selected = (minority_port, first, second)
+        removed = {terminals[i] for i in selected}
+        remainder = pole.subgraph(pole.nodes - removed)
+        matching = nx.bipartite.maximum_matching(remainder, top_nodes=majority_vertices - removed)
+        if len(matching) == len(remainder):
+            feasible.add(sum(1 << i for i in selected))
+    # Two heavy colors may share an internal edge. The doubled residual extends
+    # to a 4-regular bipartite multigraph by joining its four ports to one vertex.
+    return sum(1 << i for i, shape in enumerate(TYPES)
+               if all(mask.bit_count() == 1 or mask in feasible for mask in shape))
+
+
 def boundary_profile(pole, terminals, types=TYPES):
     """Return a bit per realizable boundary type, with the given terminal ordering."""
     arity = len(terminals)
@@ -47,6 +68,8 @@ def boundary_profile(pole, terminals, types=TYPES):
         incident[vertex].append(i)
     if any(len(edges) != 3 for edges in incident.values()):
         raise ValueError("Every pole vertex must have three incident edges, counting semiedges")
+    if arity == PORTS and types == TYPES and not pole.is_directed() and nx.is_bipartite(pole):
+        return bipartite_profile(pole, terminals)
 
     def variable(edge, color):
         return 1 + 6 * edge + color

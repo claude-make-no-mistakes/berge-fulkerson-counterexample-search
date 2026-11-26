@@ -1,0 +1,67 @@
+# Berge–Fulkerson covers for the Mattiolo–Negrini–Pagani snarks
+
+Every graph \(H_n\), \(n\geq 1\), in the Mattiolo–Negrini–Pagani construction has six perfect matchings that cover each edge exactly twice. In fact, each five-pole \(Y_n\) in their construction realizes every one of the 56 possible five-port profiles. The proof uses two finite base checks, for \(Z\) and \(Y_1\), and a construction that extends every profile through the layer in Figure 4. These snarks are cyclically 5-edge-connected and have unbounded flow resistance. [Mattiolo, Negrini and Pagani, Sections 3–4](https://arxiv.org/abs/2604.22501)
+
+## Boundary labels
+
+Use six colors. A label is a two-element subset of those colors, encoded by its six-bit incidence mask. At every cubic vertex the three labels partition the six colors. Therefore, at a closed graph each color gives a perfect matching and each edge belongs to exactly two of them.
+
+Write \(T=63\) for the mask of all six colors and \(\oplus\) for exclusive or. In a five-pole, the five boundary labels have exclusive or \(T\). To see this, add the three labels at every vertex modulo two in each color. Internal edges cancel twice and the pole has odd order. Conversely, any five two-element labels with exclusive or \(T\) satisfy the necessary parity rule. For each color record the mask of its boundary ports and sort the six masks to remove the effect of naming the colors. Each mask has size 1, 3, or 5, and the six sizes add to 10. There is one type with a size-5 mask. The remaining 55 types consist of two size-3 masks chosen with repetition from the ten possible triples. Their four singleton masks are forced by the requirement that each port occur twice. A pole with all 56 types therefore accepts any specific five ordered two-element labels with exclusive or \(T\), by permuting the colors in a witness for its type.
+
+## The finite base checks
+
+Use Petersen vertex labels \(0,\dots,9\) with every edge appearing in `PETERSEN_EDGES` in `verify_flow_resistance.py`. For the left drawing of Figure 1, delete the path \(0,1,2\) and map \((e_1,\dots,e_5)\) to \((4,5,3,7,6)\). In the drawing the internal top pair of port vertices \(e_1,e_3\) are adjacent, as are the bottom pair \(e_2,e_4\). For the right drawing, delete vertex 0, trim edge \(2,3\), and map \((f_1,\dots,f_5)\) to \((2,3,1,5,4)\). The two trimmed-edge ends join the outer port vertices \(f_3\) and \(f_5\), respectively. The rest of the adjacency is determined by the Petersen edge list.
+
+Construct \(Z\) by joining \(e_3\) to \(f_1\) and \(e_4\) to \(f_2\), and add a junction \(j\) adjacent to \(e_5,f_5\). Its boundary \((z_1,\ldots,z_5)\) is \((e_1,e_2,f_3,f_4,j)\). Form \(Y_1\) from a central \(M\) and left and right copies \(Z,Z'\). Its five joins are \(z_3e_2,z_4e_1,z'_3e_4,z'_4e_3,z_5z'_5\), and its boundary \((\alpha,\beta,\gamma,\delta,\epsilon)\) is \((z_1,z_2,z'_1,z'_2,e_5)\). These are the joins in Figures 2 and 3. [Mattiolo, Negrini and Pagani, Figures 1–3](https://arxiv.org/pdf/2604.22501)
+
+For each color and its prescribed boundary mask, remove the selected port vertices. Enumerate the perfect matchings of the remaining internal graph by choosing one remaining vertex and branching over its remaining neighbors. Restore the selected semiedges for that color. The verifier selects one matching for each of the six colors and checks that every internal edge belongs to exactly two. An edge that has already been chosen twice is excluded from all later choices. If the remaining color domains cannot supply an edge enough times, the branch stops. A separate check of the returned labels verifies the boundary and the partition at every vertex.
+
+| Pole | Vertices | Profiles with checked witnesses | Largest number of single-color candidates for any fixed port mask |
+| --- | ---: | ---: | ---: |
+| \(Z\) | 17 | 56 | 6 |
+| \(Y_1\) | 41 | 56 | 109 |
+
+Run `python verify_flow_resistance.py --n 8` from the repository root with Python 3.10 or later. Add `--emit` to produce the actual base labels and six matchings for each closed graph in JSON. In the base certificate, each integer in `edge_labels` labels the corresponding edge in `edges`. Bit \(i\) selects zero-based color \(i\). Each integer in `rows` selects port positions for the corresponding color. The script checks all 56 base profiles on both poles and all 56 transition profiles before reconstructing the full graphs. Full graph checks for \(H_1,\ldots,H_8\) cover orders 42 through 322.
+
+## The layer in Figure 4
+
+Fix arbitrary outer labels \((\alpha,\beta,\gamma,\delta,\epsilon)\) whose exclusive or is \(T\). The left copy of \(Z\) has labels \((\alpha,\beta,a,b,f)\) and the right copy has \((\gamma,\delta,c,d,g)\). The six new junctions have the following incident edges. An old port belongs to the copy of \(Y_{i-1}\), and the two instances of \(Z\) are distinguished by a prime on the right copy.
+
+| Junction | Incident neighbors or semiedges |
+| --- | --- |
+| \(A\), top left | \(z_3\), old \(\gamma\), \(C\) |
+| \(C\), top right | \(z'_3\), old \(\delta\), \(A\) |
+| \(B\), bottom left | \(z_4\), old \(\alpha\), \(D\) |
+| \(D\), bottom middle | old \(\beta\), \(B\), \(E\) |
+| \(E\), bottom right | \(z'_4\), \(D\), outer \(\epsilon\) |
+| \(F\), lowest | \(z_5\), \(z'_5\), old \(\epsilon\) |
+
+The first two outer labels come from the left copy of \(Z\) and the next two from the right copy. [Mattiolo, Negrini and Pagani, Figure 4](https://arxiv.org/pdf/2604.22501)
+
+The exclusive or of two pair masks can be any even mask of size at most four. Use the same pair twice for size zero. For size two, split its two colors between the pairs and give both pairs the same third color. For size four, partition the colors into two pairs.
+
+Choose \(d\) disjoint from \(\epsilon\) and different from \(\gamma\oplus\delta\). There are six pair masks disjoint from \(\epsilon\), so at most one is excluded. The even mask \(T\oplus\gamma\oplus\delta\oplus d\) has size at most four, since size six would give \(d=\gamma\oplus\delta\). Choose \(c,g\) whose exclusive or is this mask. This makes the right boundary admissible. Next choose \(f\) disjoint from \(g\) and different from \(\alpha\oplus\beta\). Choose \(a,b\) whose exclusive or is \(T\oplus\alpha\oplus\beta\oplus f\). This makes the left boundary admissible.
+
+Give \(DE\) the label \(q=T\oplus d\oplus\epsilon\). It is a pair, as \(d\) and \(\epsilon\) are disjoint. Give \(AC\) any pair label \(r\) disjoint from \(a\cup c\) and give \(BD\) any pair label \(s\) disjoint from \(b\cup q\). Both choices exist since the excluded sets have size at most four. Each new cubic junction now forces the label of any incident old port as the complement of its other two labels. The resulting old boundary is
+
+\[
+ (T\oplus b\oplus s,\ T\oplus s\oplus q,\ T\oplus a\oplus r,\
+    T\oplus c\oplus r,\ T\oplus f\oplus g).
+\]
+
+Each entry is a pair by the disjointness choices. Their exclusive or is
+
+\[
+\begin{aligned}
+ T\oplus a\oplus b\oplus c\oplus q\oplus f\oplus g
+ &= (a\oplus b\oplus f)\oplus(c\oplus d\oplus g)\oplus\epsilon \\
+ &= (T\oplus\alpha\oplus\beta)\oplus(T\oplus\gamma\oplus\delta)\oplus\epsilon \\
+ &= T.
+\end{aligned}
+\]
+
+The old boundary is admissible, so by induction it has a labeling of \(Y_{i-1}\). Both new copies of \(Z\) accept their prescribed labels by the finite base check. Gluing the labels through the six junctions constructs the requested labeling of \(Y_i\).
+
+## Closing the graph
+
+The construction of \(H_n\) joins \(\alpha\) and \(\gamma\) into one edge and attaches \(\beta,\delta,\epsilon\) to a new cubic vertex. Give \(\alpha\) and \(\gamma\) the same label and partition the colors across \(\beta,\delta,\epsilon\). Their five labels have exclusive or \(T\), so \(Y_n\) accepts them. The cover closes with matching labels on the joined semiedges and a partition at the new vertex. This finishes the proof for every \(n\). [Mattiolo, Negrini and Pagani, Figure 6](https://arxiv.org/pdf/2604.22501)

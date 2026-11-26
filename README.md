@@ -19,6 +19,14 @@ With the cyclic cut filter and the bipartite restart both enabled, 194 of 600 in
 
 A further run moved the dangling edges to new vertices in 468 of 1,400 accepted mutations. Among all 1,400 fragments, 444 excluded the all-five type. The best eligible splice in that group still had six compatible types.
 
+## Exact five-cut results
+
+- An independent replay recovered 1,716 ordered disjoint profiles in 13 orbits under the five-cut necessary conditions. It corrects the exchanged port labels in published case XIII. DRAT-trim accepted the exhaustion certificate. [Paper](five-cut-profiles.pdf) · [Corrected profiles and replay](FIVE-CUT-TARGETS.md)
+- Six ordinary matching checks determine the profile of a bipartite five-pole. The method agreed with the previous SAT implementation on 253 inputs. A side of a cyclic five-edge cut has all 21 bipartite types if the graph has no cyclic cut of size at most three. Separately, five terminals on one side of a one-edge defect give 36, 45, or 55 types under cyclic 5-edge connectivity. Both pole classes are excluded from cyclic five-cuts of a smallest counterexample. [Proof](BIPARTITE-FIVE-POLES.md)
+- The exact-profile search evaluated 4,300 mutations across two runs. The two closest poles each realized the case II target plus five extra types. Their corresponding pentagon splices still admitted covers and had cyclic cuts of size four. [Search](target-five-poles.jsonl) · [Continuation](target-five-poles-resumed.jsonl)
+- A third run evaluated 900 mutations and scored 868 poles including seeds under the requirement of a pentagon splice with no cyclic cut of size at most four. Its closest pole had all the types of a case VII target plus nine extra types, eight of which are shared with the aligned pentagon. [Run log](target-five-poles-cyclic.jsonl)
+- Every Mattiolo–Negrini–Pagani snark $H_n$ has a Berge–Fulkerson cover, even though the family has unbounded flow resistance. Two checked base poles and a uniform extension through every layer prove the result for all $n$. [Paper](flow-resistance.pdf) · [Proof and replay](FLOW-RESISTANCE.md)
+
 ## Replay
 
 Use Python 3.10, NetworkX 3.3, and `python-sat==1.9.dev25`. The original seed graph edge lists are available at the pinned source below. [Seed graph edge lists](https://github.com/fsantibanezleal/CAOS_RESEARCH/tree/7679b56e9cf19ed31c38e1db265aa6fbfd3e7aa2/problems/combinatorics/petersen-coloring/data)
@@ -36,4 +44,10 @@ python narrow_poles.py cyclic-controls.g6 --trials 600 --seed 20261204 --cyclic-
 python narrow_poles.py cyclic-controls.g6 --trials 1400 --seed 20261206 --cyclic-five --avoid-all-ports --restart narrow-poles-cyclic-no-all.jsonl --move-terminals
 python verify_single_type.py narrow-poles-valid.jsonl certificates/bf-single-type
 drat-trim certificates/bf-single-type.cnf certificates/bf-single-type.drat
+python replay_five_targets.py --verify certificates/bf-five-profile-exhaustion
+drat-trim certificates/bf-five-profile-exhaustion.cnf certificates/bf-five-profile-exhaustion.drat
+python target_five_poles.py cyclic-controls.g6 --restart narrow-poles-valid.jsonl --restart narrow-poles-cyclic-no-all.jsonl --restart narrow-poles-terminal.jsonl --trials 800 --seed 20261209
+python target_five_poles.py cyclic-controls.g6 --restart target-five-poles.jsonl --restart narrow-poles-valid.jsonl --restart narrow-poles-terminal.jsonl --trials 3500 --seed 20261210
+python target_five_poles.py cyclic-controls.g6 --restart target-five-poles-resumed.jsonl --restart narrow-poles-terminal.jsonl --pentagon-cyclic-five --trials 900 --seed 20261211
+python verify_flow_resistance.py --n 8
 ```

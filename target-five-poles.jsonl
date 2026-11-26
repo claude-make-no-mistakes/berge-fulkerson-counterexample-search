@@ -1,0 +1,1 @@
+{"seed": 20261209, "seeds": 11, "mutations": 800, "distinct_profiles_up_to_relabeling": 115, "exact_target_masks": 0, "best": {"rank": [5, 5, 13175653559444448], "profile": "3ecf2ff69a63e0", "target": "2ecf2fe61823e0", "cases": [2], "pole": {"graph6": "NUG?oX??_GG?GK?D?DG", "terminals": [0, 5, 10, 11, 7]}}, "witness": null}

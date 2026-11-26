@@ -1,0 +1,72 @@
+\documentclass[10pt]{article}
+\usepackage[letterpaper,hmargin=0.84in,vmargin=0.74in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb,lmodern,microtype,tabularx,booktabs}
+\usepackage[hidelinks]{hyperref}
+\setlength{\emergencystretch}{1.3em}
+\author{}
+\date{}
+\title{Five-cut profiles for the Berge--Fulkerson conjecture}
+\begin{document}\maketitle\vspace{-2.5em}
+Proposition 4.4 of Má\v{c}ajová, Mazzuoccolo and Tabarelli restricts the exact profiles of a cyclic five-edge cut in a minimum Berge\textendash{}Fulkerson counterexample. Twelve of the cases have an actual pentagon on one side. The thirteenth has two other profiles. These are necessary conditions for a minimum counterexample. The enumeration gives abstract profiles and does not require each to be realized by a pole. \href{https://doi.org/10.26493/1855-3974.3409.c13}{Primary paper}
+
+\section{Correcting the port labels in case XIII}
+
+Use the paper's notation $(ij)(kl)$ for the type whose two colors using three ports omit the pairs $ij$ and $kl$. A repeated pair is a loop. The published Appendix includes the all-five type in the right profile of case XIII. From it, switch the all-five color with the singleton color at port 2. Their open chain starting at port 1 ends at 3, 4, or 5, since the ports where just one of these colors occurs are $\{1,3,4,5\}$. The resulting boundary type is respectively $(13)(45)$, $(14)(35)$, or $(15)(34)$. The printed right profile omits all three. It therefore cannot be a five-pole profile, regardless of the order of the ports.
+
+The replay recovers the corrected left profile as the two looped cliques on the labels
+
+\[
+\{12,15,23,34,45\},\qquad \{13,14,24,25,35\}.
+\]
+
+These label sets are complementary pentagons in $K_5$. The right profile is the 25 cross pairs plus the all-five type. Thus Figure 7 interchanges labels $25$ and $45$ between the two groups. In the Appendix, exchange those two labels in the right profile and replace $45$ by $25$ in the first block of the left profile. The second left block already matches the corrected labels. In the repository's bit order, the corrected pair is \texttt{b4abccc8f986b9} and \texttt{4b543337067946}, with 30 and 26 types respectively.
+
+\section{Exact replay}
+
+The verifier enumerates all 56 single boundary types. For each type, it requires each choice of two colors to admit a chain switch on some paired endpoints. For two disjoint color pairs the profile must contain the two chosen single switches and their simultaneous switch. A color pair has at most four exclusive boundary endpoints. When it has four, the two chains of a pairing give the same type after switching and renaming those two colors. These conditions hold for every actual profile. The verifier also requires each side to meet and omit some type in every orientation of each of the two acyclic completions from Figure 4, as in the paper's minimum-counterexample argument.
+
+One completion has a three-vertex path, whose heavy colors omit one port at each end. Its types form the looped clique on $14,15,24,25$ in the paper's ordering. The other has a three-stub vertex and a bare edge connecting ports 4 and 5. The two colors on that edge are the heavy colors, with omitted pairs among $12,13,23$. Both replacements preserve bridgelessness. In a minimum cyclically 5-edge-connected counterexample the poles are connected and have distinct terminals. An internal bridge cannot separate a tree of order $n$, since its boundary would need $n+2$ edges and has at most $n$ terminal edges plus the bridge. If both sides were cyclic each would need at least four terminals, also impossible. Gluing either cap to the remaining connected bridgeless pole creates only edges on cycles, since every branch of a cap reaches a terminal on the retained pole. The resulting graph is smaller and has a cover by minimality. Each original profile therefore meets each cap profile. Disjointness forces it to omit a type from that cap as well.
+
+There are 430 distinct switch rules and 25 distinct completion masks. The two profile formulas plus 56 disjointness clauses give 1,716 ordered disjoint pairs. Under simultaneous five-port relabeling and exchange of the two sides they form 13 orbits. Twelve coincide with the published cases I\textendash{}XII. The other orbit is the corrected case XIII above. This is an independent necessary-condition enumeration and does not use the paper's intermediate count of individual profiles.
+
+The archived pair list records the 1,716 projections. The verifier checks each from the switch and completion rules and regenerates one blocking clause per pair. DRAT-trim checks that the formula with all blockers is unsatisfiable. Proof check
+
+\begin{verbatim}
+python replay_five_targets.py --verify certificates/bf-five-profile-exhaustion
+drat-trim certificates/bf-five-profile-exhaustion.cnf \
+          certificates/bf-five-profile-exhaustion.drat
+\end{verbatim}
+
+The search in \texttt{target\_five\_poles.py} scores an actual profile by the number of boundary types that must be inserted or deleted to attain a classified profile under some port ordering. It excludes the pentagon itself as a search target. Any complete witness is checked for bridges and smaller cyclic cuts before running the full graph SAT verifier.
+
+A five-pole is a cubic graph fragment with five dangling edges at distinct terminals. A Berge\textendash{}Fulkerson coloring uses two colors on each edge and all six colors exactly once at each vertex. For a color, its boundary mask records the terminals whose dangling edges use that color. The boundary type is the unordered multiset of the six masks. \href{https://doi.org/10.26493/1855-3974.3409.c13}{Five-edge-cut framework}
+
+\section{Six matching tests determine the exact profile}
+
+Let the internal graph of a five-pole be bipartite, with parts $A,B$. If the numbers of dangling edges on those parts are $p_A,p_B$, counting internal edges gives $3(|A|-|B|)=p_A-p_B$. After interchanging the parts if necessary, $p_A=4$, $p_B=1$, and $|A|=|B|+1$. Denote the single $B$ terminal by $b$.
+
+In a single color, covering each remaining vertex once by internal matching edges requires one more selected terminal in $A$ than in $B$. Therefore the boundary mask is either a singleton in $A$ or a triple consisting of $b$ and two $A$ terminals. The port at $b$ forces exactly two triple colors. A triple is feasible precisely when the internal graph has a perfect matching after deleting the three named terminals.
+
+Conversely, choose any multiset of two feasible triples. Choose a matching for each independently, using one copy of each chosen edge from two copies of every edge of the pole. After allocating these two colors, each vertex has four incidences left, including dangling incidences. None of the dangling incidences is on $B$ and their total on $A$ is four. Join the four remaining dangling copies to one new vertex on $B$ to get a 4-regular bipartite multigraph. Hall's theorem decomposes its edges into four perfect matchings. They use exactly one new edge each. This supplies precisely the required singleton masks after relabeling the four colors. Thus if $t$ of the six triples are feasible, the exact boundary profile consists of all $\binom{t+1}{2}$ multiset choices of two triples, with the singleton multiplicities determined by the leftover dangling copies.
+
+\section{No cyclic three-edge cut forces all 21 types}
+
+Suppose the pole is a side of a cyclic five-edge cut in a cubic graph with no cyclic cut of size at most three. Fix any two $A$ terminals $u,v$. For $Y\subseteq B\setminus\{b\}$, let $N$ be its neighborhood in the whole internal graph of the pole. Every vertex of $Y$ has its three incident edges within $N\cup Y$. If $p$ dangling edges belong to $N$, degree counting gives $3(|N|-|Y|)\geq p$. If Hall's condition for matching after deleting $b,u,v$ fails on $Y$, the difference $|N|-|Y|$ must be one and both $u,v$ must belong to $N$. Indeed a difference of zero forces $p=0$, and a difference at least two survives the deletions. The full graph has exactly three edges leaving $N\cup Y$. The set $Y$ has size at least two since one vertex has three distinct neighbors. Therefore the induced subgraph, with $3|Y|$ edges on $2|Y|+1$ vertices, contains a cycle. The complement contains the other cyclic pole. This is a forbidden cyclic cut of size three. Hall's theorem now gives the desired matching for every triple, so the profile has all 21 types.
+
+In this setting the pole shares exactly six types with a pentagon in any port ordering. The two omitted ports of a triple must be adjacent in the pentagon and must avoid $b$. There are three allowable cycle edges, giving six multisets of size two. Two bipartite five-poles share 21 types if their minority ports align and six otherwise. In the latter case the two omitted ports must come from the three ports that are majority on both sides.
+
+In fact those gluings are 3-edge-colorable. Choose a common heavy triple, and use a partial perfect matching on each pole to form a perfect matching of the full graph. For two bipartite poles the triple includes both minority ports. The two remaining cut edges terminate on majority vertices of each pole, so the internal paths joining their ends have even length. For a pentagon the internal path has length four. All other remaining components are even cycles, so the complement of the perfect matching splits into two perfect matchings. In particular a search for a cyclically 5-edge-connected counterexample with a cyclic five-edge cut can omit all bipartite\textendash{}bipartite and bipartite\textendash{}pentagon joins.
+
+The exact matching implementation is in \texttt{five\_cut.py}. It uses the six matching tests even when the cut hypothesis is unavailable.
+
+\section{Five terminals on one side of a one-edge defect}
+
+Suppose the same cut hypotheses hold with cyclic edge connectivity at least five, and the pole has a partition $A,B$ with exactly one internal edge $pq$ on $A$, none on $B$, and all five terminals on $B$. All other internal edges cross the partition. Degree counting gives $|B|=|A|+1$. A color uses one dangling edge if it avoids $pq$, and three if it uses $pq$. Thus the two colors on $pq$ use triples and the other four use singletons. For either such color, the two omitted terminals and all nonterminal vertices of $B$ must match onto $A\setminus\{p,q\}$ in the bipartite graph obtained by deleting $p,q$. Conversely, any two feasible omitted pairs work together, even if they coincide. Allocate their matchings and both copies of $pq$. The residual is bipartite with four dangling edge copies, all on $B$. Attach them to a new vertex on $A$ and decompose the resulting 4-regular bipartite multigraph as above.
+
+Write $J$ for the graph after deleting $p,q$. If $W\subseteq B$, let $k$ count the terminals in $W$ and write $\delta(W)=|W|-|N_J(W)|$. In the full cubic graph the set $W\cup N_J(W)\cup\{p,q\}$ has a boundary of size $4+2k-3\delta(W)$. Its induced edges are the $3|W|-k$ edges at $W$ within the pole and $pq$. When $W\ne\varnothing$, the set has at least three vertices and a boundary of size at most four would force a cycle inside it. A forest on at least three vertices needs a boundary of size at least five in a cubic graph. Since the complementary pole contains a cycle, this would violate the connectivity hypothesis. Consequently $\delta(W)\leq0$ for $k\leq1$, and $\delta(W)\leq1$ for $k\leq3$.
+
+An infeasible omitted pair $uv$ has a Hall witness $W_{uv}$ in the nonterminal vertices of $B$ together with $u,v$. It has $\delta(W_{uv})\geq1$, so it contains both $u$ and $v$. If $uw$ were also infeasible, the intersection of the two witnesses would have at most one terminal and thus deficiency at most zero. Neighborhood size is submodular, so deficiency is supermodular. Their union would have deficiency at least two and at most three terminals, impossible. Hence infeasible omitted pairs form a matching among the five terminals, with at most two members. Eight, nine or ten omitted pairs are feasible, giving exactly 36, 45 or 55 boundary types. With a pentagon, at least three of its five adjacent pairs remain feasible. They give at least six common types.
+
+Together with the five-cut classification of Má\v{c}ajová, Mazzuoccolo and Tabarelli, these profiles rule out either form of pole on a cyclic five-edge cut of a minimum counterexample. The bipartite form has 21 types, fewer than either non-pentagon side in the classification. The one-edge-defect form has at least 36 types, more than either side of case XIII, and always shares a type with a pentagon. Classification and replay
+\end{document}
