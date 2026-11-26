@@ -14,13 +14,17 @@ from search import search
 
 
 def pentagon_orientations():
-    cycle_profile = validate()
+    variants = profile_orientations(validate())
+    assert len(variants) == 12  # Unoriented cycles on five labeled ports.
+    return variants
+
+
+def profile_orientations(profile):
     positions = {shape: i for i, shape in enumerate(TYPES)}
     variants = {}
     for perm in permutations(range(PORTS)):
-        reordered = sum(1 << positions[relabel_type(TYPES[i], perm)] for i in active_bits(cycle_profile))
+        reordered = sum(1 << positions[relabel_type(TYPES[i], perm)] for i in active_bits(profile))
         variants.setdefault(reordered, perm)
-    assert len(variants) == 12  # Unoriented cycles on five labeled ports.
     return variants
 
 
@@ -68,6 +72,10 @@ def encode(pole, terminals):
             "terminals": [labels[v] for v in terminals]}
 
 
+def decode(pole_data):
+    return nx.from_graph6_bytes(pole_data["graph6"].encode("ascii")), pole_data["terminals"]
+
+
 def bipartite_restart(half_order):
     """Delete a three-vertex path from a cubic bipartite graph without 4-cycles."""
     graph = nx.Graph()
@@ -83,15 +91,33 @@ def bipartite_restart(half_order):
     return {"best_score": list(score(profile, pentagon_orientations())), "best_pole": encode(graph, terminals)}
 
 
-def scan(sources, trials, seed, export, restart=None, avoid_all_ports=False):
-    orientations = pentagon_orientations()
-    cycle = nx.cycle_graph(PORTS), list(range(PORTS))
+def scan(sources, trials, seed, export, restart=None, avoid_all_ports=False, target=None):
+    if target is None:
+        target = nx.cycle_graph(PORTS), list(range(PORTS))
+        orientations = pentagon_orientations()
+    else:
+        if not nx.is_connected(target[0]) or not admits_bridgeless_splice(*target):
+            raise ValueError("The target must be a connected pole that can form a bridgeless splice")
+        orientations = profile_orientations(boundary_profile(*target))
     all_ports = 1 << next(i for i, shape in enumerate(TYPES) if MASK in shape)
 
     def rank(profile):
         base = score(profile, orientations)
-        # This type belongs to every pentagon orientation and must disappear.
+        # This type belongs to every orientation when the target admits it.
         return (bool(profile & all_ports), *base) if avoid_all_ports else base
+
+    def candidate(pole, terminals, profile):
+        for order, permutation in orientations.items():
+            if profile & order:
+                continue
+            joined = glue((pole, terminals), target, permutation)
+            if any(nx.bridges(joined)):
+                continue
+            outcome = search(joined, export)
+            assert outcome["status"] == "unsat-awaiting-proof-check"
+            return {"candidate_graph6": nx.to_graph6_bytes(joined, header=False).decode().strip(),
+                    "pole": encode(pole, terminals), "proof": outcome}
+        return None
 
     rng = Random(seed)
     pool = []
@@ -103,16 +129,23 @@ def scan(sources, trials, seed, export, restart=None, avoid_all_ports=False):
         poles = list(cycle_poles(graph))
         for pole, terminals in rng.sample(poles, min(3, len(poles))):
             profile = boundary_profile(pole, terminals)
-            pool.append((rank(profile), pole, terminals))
+            key = rank(profile)
+            if key[-2] == 0:
+                outcome = candidate(pole, terminals, profile)
+                if outcome is not None:
+                    return outcome
+            pool.append((key, pole, terminals))
     if restart is not None:
-        best = restart["best_pole"]
-        pole = nx.from_graph6_bytes(best["graph6"].encode("ascii"))
-        terminals = best["terminals"]
+        pole, terminals = decode(restart["best_pole"])
         if not admits_bridgeless_splice(pole, terminals):
             raise ValueError("The restart pole always produces a bridge")
         profile = boundary_profile(pole, terminals)
-        assert list(score(profile, orientations)) == restart["best_score"]
-        pool.append((rank(profile), pole, terminals))
+        key = rank(profile)
+        if key[-2] == 0:
+            outcome = candidate(pole, terminals, profile)
+            if outcome is not None:
+                return outcome
+        pool.append((key, pole, terminals))
     if not pool:
         raise RuntimeError("No input graph yielded a pentagon complement")
     initial = min(key for key, _, _ in pool)
@@ -143,16 +176,9 @@ def scan(sources, trials, seed, export, restart=None, avoid_all_ports=False):
         scores[compatible] += 1
         without_all_ports += not bool(profile & all_ports)
         if compatible == 0:
-            for order, perm in orientations.items():
-                if profile & order:
-                    continue
-                joined = glue((changed, terminals), cycle, perm)
-                if any(nx.bridges(joined)):
-                    continue
-                outcome = search(joined, export)
-                assert outcome["status"] == "unsat-awaiting-proof-check"
-                return {"candidate_graph6": nx.to_graph6_bytes(joined, header=False).decode().strip(),
-                        "pole": form, "proof": outcome}
+            outcome = candidate(changed, terminals, profile)
+            if outcome is not None:
+                return outcome
         pool.append((key, changed, terminals))
         pool.sort(key=lambda record: record[0])
         del pool[20:]
@@ -164,6 +190,7 @@ def scan(sources, trials, seed, export, restart=None, avoid_all_ports=False):
     best_key, pole, terminals = min(pool, key=lambda record: record[0])
     return {"seed": seed, "initial_score": initial[-2:], "best_score": best_key[-2:],
             "best_pole": encode(pole, terminals), "avoid_all_ports": avoid_all_ports,
+            "target_pole": encode(*target),
             "without_all_ports": without_all_ports,
             "evaluated": sum(scores.values()), "minimum_common_type_histogram": dict(sorted(scores.items())),
             "bridge_rejections": bridge_rejections, "witness": None}
@@ -178,6 +205,7 @@ if __name__ == "__main__":
     initial = parser.add_mutually_exclusive_group()
     initial.add_argument("--restart", type=Path)
     initial.add_argument("--bipartite-restart", type=int, metavar="HALF_ORDER")
+    parser.add_argument("--target-pole", type=Path, help="Glue to the saved best pole instead of a pentagon")
     parser.add_argument("--avoid-all-ports", action="store_true",
                         help="Prefer profiles excluding any color that uses all five ports")
     args = parser.parse_args()
@@ -189,4 +217,9 @@ if __name__ == "__main__":
     restart = json.loads(args.restart.read_text(encoding="utf-8-sig").splitlines()[-1]) if args.restart else None
     if args.bipartite_restart is not None:
         restart = bipartite_restart(args.bipartite_restart)
-    print(json.dumps(scan(graphs, args.trials, args.seed, args.proof_prefix, restart, args.avoid_all_ports)), flush=True)
+    target = None
+    if args.target_pole is not None:
+        target_record = json.loads(args.target_pole.read_text(encoding="utf-8-sig").splitlines()[-1])
+        target = decode(target_record["best_pole"])
+    result = scan(graphs, args.trials, args.seed, args.proof_prefix, restart, args.avoid_all_ports, target)
+    print(json.dumps(result), flush=True)

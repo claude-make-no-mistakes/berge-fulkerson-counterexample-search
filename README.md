@@ -11,6 +11,8 @@ At a cut with $r$ edges, represent each color by the set of ports it meets. Each
 
 Every pentagon attachment admits the all-five boundary pattern on the pentagon side. The option `--avoid-all-ports` gives priority to fragments where that pattern is unavailable. A bipartite seed ensures this from the start. Its two sides have sizes differing by one and four ports lie on the larger side. A perfect matching on the fragment with all five port vertices removed would require equal remaining side sizes.
 
+Among 2,200 switched fragments from the bipartite seed campaign, 655 excluded the all-five type. Every one of those fragments still had at least six compatible types for each pentagon attachment. A separate run against the narrow 63-vertex pole found 279 fragments without the all-five type among 1,000 inspected. For those 279 fragments every splice still had a common type.
+
 ## Replay
 
 Use Python 3.10, NetworkX 3.3, and `python-sat==1.9.dev25`. The original seed graph edge lists are available at the pinned source below. [Seed graph edge lists](https://github.com/fsantibanezleal/CAOS_RESEARCH/tree/7679b56e9cf19ed31c38e1db265aa6fbfd3e7aa2/problems/combinatorics/petersen-coloring/data)
@@ -21,6 +23,8 @@ python five_cut.py controls.g6 --path-limit 24
 python six_cut.py controls.g6 --cap-per-graph 16
 python narrow_poles.py controls.g6 --trials 1000
 python narrow_poles.py controls.g6 --trials 2500 --seed 20261128 --restart narrow-poles.jsonl
+python narrow_poles.py controls.g6 --trials 2200 --seed 20261201 --avoid-all-ports --bipartite-restart 32
+python narrow_poles.py controls.g6 --trials 1000 --seed 20261202 --avoid-all-ports --bipartite-restart 32 --target-pole narrow-poles-valid.jsonl
 python verify_single_type.py narrow-poles-valid.jsonl certificates/bf-single-type
 drat-trim certificates/bf-single-type.cnf certificates/bf-single-type.drat
 ```
