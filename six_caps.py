@@ -29,9 +29,9 @@ CAPS = (
 )
 
 
-def port_labels(shape):
+def port_labels(shape, order=6):
     return tuple(sum(1 << color for color, support in enumerate(shape) if support >> port & 1)
-                 for port in range(6))
+                 for port in range(order))
 
 
 def accepts(labels, edges, ports, wires):

@@ -5,3 +5,5 @@ We replayed the Berge–Fulkerson five-cut classification and recovered all 13 p
 Every Mattiolo–Negrini–Pagani snark $H_n$ has a Berge–Fulkerson cover, even as its flow resistance grows with $n$. The construction checks two base poles and extends every boundary type through each layer. [paper link]
 
 A cubic graph with a hexagon and a bipartite exterior has a Berge–Fulkerson cover. In a smallest counterexample with six distinct terminals, the exterior also survives deleting any one edge or any two incident edges without becoming bipartite. The proof uses signed port counts and simultaneous Kempe switches. [paper link]
+
+A smallest Berge–Fulkerson counterexample cannot split into four cyclic parts with five edges leaving each. Cyclic connectivity fixes how the parts connect. All 331,776 assignments of their possible boundary types admit a cover. [paper link]

@@ -31,6 +31,12 @@ A further run moved the dangling edges to new vertices in 468 of 1,400 accepted 
 
 A hexagon with bipartite exterior always admits a Berge–Fulkerson cover. With three ports in each class, the graph is 3-edge-colorable. With distinct exterior terminals, a smallest counterexample cannot have an exterior made bipartite by deleting one edge or two incident edges. Two same-side defects are also excluded when the two ports in the opposite class lie opposite each other around the hexagon. An exact signed-count and Kempe-switch calculation verifies the exclusions. [Paper](hexagon-cut.pdf) · [Proof and scope](HEXAGON-CUT.md) · [Replay](six-cap-closure.jsonl)
 
+The run restricted to orders at least 38 tested 4,123 hexagon splices. Its closest splice had 66 vertices and nine common types. Its exterior profile agrees with the best 20-vertex exterior up to a port relabeling. [Run](hexagon-large-search.jsonl) · [Verified cover](certificates/hexagon-large-best-cover.json)
+
+## Four cyclic five-edge cuts
+
+A smallest counterexample cannot split into four cyclic parts with five outgoing edges each. The cuts fix the connection pattern, and all 331,776 assignments of their possible profiles admit a cover. A separate exact search using five actual fragments found no incompatible composition. [Paper](four-five-poles.pdf) · [Proof and replay](FOUR-FIVE-POLES.md)
+
 ## Replay
 
 Use Python 3.10, NetworkX 3.3, and `python-sat==1.9.dev25`. The original seed graph edge lists are available at the pinned source below. [Seed graph edge lists](https://github.com/fsantibanezleal/CAOS_RESEARCH/tree/7679b56e9cf19ed31c38e1db265aa6fbfd3e7aa2/problems/combinatorics/petersen-coloring/data)
@@ -57,4 +63,6 @@ python verify_flow_resistance.py --n 8
 python six_caps.py
 python search_hexagons.py cyclic-controls.g6 --trials 5000
 python search_hexagons.py cyclic-controls.g6 --trials 5000 --min-order 38 --seed 20261215
+python compose_six_poles.py --classified-four-cuts
+python compose_six_poles.py narrow-poles-valid.jsonl narrow-poles-terminal.jsonl target-five-poles-resumed.jsonl target-five-poles-cyclic.jsonl
 ```
