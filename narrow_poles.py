@@ -9,6 +9,7 @@ from random import Random
 
 import networkx as nx
 
+from cyclic_cut import small_cyclic_cut
 from five_cut import MASK, PORTS, TYPES, active_bits, boundary_profile, cycle_poles, glue, relabel_type, validate
 from search import search
 
@@ -91,7 +92,7 @@ def bipartite_restart(half_order):
     return {"best_score": list(score(profile, pentagon_orientations())), "best_pole": encode(graph, terminals)}
 
 
-def scan(sources, trials, seed, export, restart=None, avoid_all_ports=False, target=None):
+def scan(sources, trials, seed, export, restart=None, avoid_all_ports=False, target=None, cyclic_five=False):
     if target is None:
         target = nx.cycle_graph(PORTS), list(range(PORTS))
         orientations = pentagon_orientations()
@@ -101,8 +102,18 @@ def scan(sources, trials, seed, export, restart=None, avoid_all_ports=False, tar
         orientations = profile_orientations(boundary_profile(*target))
     all_ports = 1 << next(i for i, shape in enumerate(TYPES) if MASK in shape)
 
-    def rank(profile):
-        base = score(profile, orientations)
+    def rank(pole, terminals, profile):
+        if cyclic_five:
+            ordered = sorted(orientations.items(), key=lambda pair: (pair[0] & profile).bit_count())
+            for shape, permutation in ordered:
+                joined = glue((pole, terminals), target, permutation)
+                if small_cyclic_cut(joined) is None:
+                    base = ((shape & profile).bit_count(), profile.bit_count())
+                    break
+            else:
+                return None
+        else:
+            base = score(profile, orientations)
         # This type belongs to every orientation when the target admits it.
         return (bool(profile & all_ports), *base) if avoid_all_ports else base
 
@@ -111,7 +122,7 @@ def scan(sources, trials, seed, export, restart=None, avoid_all_ports=False, tar
             if profile & order:
                 continue
             joined = glue((pole, terminals), target, permutation)
-            if any(nx.bridges(joined)):
+            if any(nx.bridges(joined)) or (cyclic_five and small_cyclic_cut(joined) is not None):
                 continue
             outcome = search(joined, export)
             assert outcome["status"] == "unsat-awaiting-proof-check"
@@ -125,11 +136,14 @@ def scan(sources, trials, seed, export, restart=None, avoid_all_ports=False, tar
     seen = set()
     scores = Counter()
     bridge_rejections = 0
+    cyclic_rejections = 0
     for graph in sources:
         poles = list(cycle_poles(graph))
         for pole, terminals in rng.sample(poles, min(3, len(poles))):
             profile = boundary_profile(pole, terminals)
-            key = rank(profile)
+            key = rank(pole, terminals, profile)
+            if key is None:
+                continue
             if key[-2] == 0:
                 outcome = candidate(pole, terminals, profile)
                 if outcome is not None:
@@ -140,12 +154,13 @@ def scan(sources, trials, seed, export, restart=None, avoid_all_ports=False, tar
         if not admits_bridgeless_splice(pole, terminals):
             raise ValueError("The restart pole always produces a bridge")
         profile = boundary_profile(pole, terminals)
-        key = rank(profile)
-        if key[-2] == 0:
-            outcome = candidate(pole, terminals, profile)
-            if outcome is not None:
-                return outcome
-        pool.append((key, pole, terminals))
+        key = rank(pole, terminals, profile)
+        if key is not None:
+            if key[-2] == 0:
+                outcome = candidate(pole, terminals, profile)
+                if outcome is not None:
+                    return outcome
+            pool.append((key, pole, terminals))
     if not pool:
         raise RuntimeError("No input graph yielded a pentagon complement")
     initial = min(key for key, _, _ in pool)
@@ -171,8 +186,11 @@ def scan(sources, trials, seed, export, restart=None, avoid_all_ports=False, tar
             continue
         seen.add(signature)
         profile = boundary_profile(changed, terminals)
-        compatible, _ = score(profile, orientations)
-        key = rank(profile)
+        key = rank(changed, terminals, profile)
+        if key is None:
+            cyclic_rejections += 1
+            continue
+        compatible = key[-2]
         scores[compatible] += 1
         without_all_ports += not bool(profile & all_ports)
         if compatible == 0:
@@ -193,7 +211,7 @@ def scan(sources, trials, seed, export, restart=None, avoid_all_ports=False, tar
             "target_pole": encode(*target),
             "without_all_ports": without_all_ports,
             "evaluated": sum(scores.values()), "minimum_common_type_histogram": dict(sorted(scores.items())),
-            "bridge_rejections": bridge_rejections, "witness": None}
+            "bridge_rejections": bridge_rejections, "cyclic_rejections": cyclic_rejections, "witness": None}
 
 
 if __name__ == "__main__":
@@ -206,6 +224,7 @@ if __name__ == "__main__":
     initial.add_argument("--restart", type=Path)
     initial.add_argument("--bipartite-restart", type=int, metavar="HALF_ORDER")
     parser.add_argument("--target-pole", type=Path, help="Glue to the saved best pole instead of a pentagon")
+    parser.add_argument("--cyclic-five", action="store_true", help="Only score pentagon splices with no smaller cyclic cut")
     parser.add_argument("--avoid-all-ports", action="store_true",
                         help="Prefer profiles excluding any color that uses all five ports")
     args = parser.parse_args()
@@ -213,6 +232,8 @@ if __name__ == "__main__":
         parser.error("Expected a positive trial count")
     if args.bipartite_restart is not None and args.bipartite_restart < 9:
         parser.error("The bipartite seed requires at least nine vertices on each side")
+    if args.cyclic_five and args.target_pole is not None:
+        parser.error("Cyclic cut filtering uses pentagon attachments")
     graphs = [nx.from_graph6_bytes(line) for line in args.corpus.read_bytes().splitlines()]
     restart = json.loads(args.restart.read_text(encoding="utf-8-sig").splitlines()[-1]) if args.restart else None
     if args.bipartite_restart is not None:
@@ -221,5 +242,5 @@ if __name__ == "__main__":
     if args.target_pole is not None:
         target_record = json.loads(args.target_pole.read_text(encoding="utf-8-sig").splitlines()[-1])
         target = decode(target_record["best_pole"])
-    result = scan(graphs, args.trials, args.seed, args.proof_prefix, restart, args.avoid_all_ports, target)
+    result = scan(graphs, args.trials, args.seed, args.proof_prefix, restart, args.avoid_all_ports, target, args.cyclic_five)
     print(json.dumps(result), flush=True)
