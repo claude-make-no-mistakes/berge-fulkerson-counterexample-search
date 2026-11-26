@@ -1,82 +1,267 @@
-\documentclass[10pt]{article}
-\usepackage[letterpaper,hmargin=0.84in,vmargin=0.74in]{geometry}
+\documentclass[11pt]{article}
+\usepackage[letterpaper,margin=1in]{geometry}
 \usepackage[T1]{fontenc}
-\usepackage{amsmath,amssymb,lmodern,microtype,tabularx,booktabs}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,amssymb,amsthm,lmodern,microtype,booktabs}
 \usepackage[hidelinks]{hyperref}
-\setlength{\emergencystretch}{1.3em}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+
+\title{Berge--Fulkerson Covers for the Mattiolo--Negrini--Pagani Snarks}
 \author{}
 \date{}
-\title{Berge--Fulkerson covers for the Mattiolo--Negrini--Pagani snarks}
-\begin{document}\maketitle\vspace{-2.5em}
-Every graph \(H_n\), \(n\geq 1\), in the Mattiolo\textendash{}Negrini\textendash{}Pagani construction has six perfect matchings that cover each edge exactly twice. In fact, each five-pole \(Y_n\) in their construction realizes every one of the 56 possible five-port profiles. The proof uses two finite base checks, for \(Z\) and \(Y_1\), and a construction that extends every profile through the layer in Figure 4. These snarks are cyclically 5-edge-connected and have unbounded flow resistance. \href{https://arxiv.org/abs/2604.22501}{Mattiolo, Negrini and Pagani, Sections 3\textendash{}4}
 
-\section{Boundary labels}
+\begin{document}
+\maketitle
 
-Use six colors. A label is a two-element subset of those colors, encoded by its six-bit incidence mask. At every cubic vertex the three labels partition the six colors. Therefore, at a closed graph each color gives a perfect matching and each edge belongs to exactly two of them.
+\begin{abstract}
+We prove that every snark $H_n$ ($n \ge 1$) in the cyclically $5$-edge-connected
+unbounded-flow-resistance family of Mattiolo, Negrini, and Pagani~\cite{MNP} admits a
+Berge--Fulkerson cover (six perfect matchings covering each edge twice). Specifically,
+we verify computationally that the two finite building blocks $Z$ ($17$ vertices) and
+$Y_1$ ($41$ vertices) each realize all $56$ admissible five-port boundary types, and we
+give an explicit algebraic transition showing that the recursive layer preserves full
+boundary realizability for every $Y_n$ ($n \ge 1$). Closing $Y_n$ into $H_n$ then yields
+a Berge--Fulkerson cover for all $n \ge 1$.
+\end{abstract}
 
-Write \(T=63\) for the mask of all six colors and \(\oplus\) for exclusive or. In a five-pole, the five boundary labels have exclusive or \(T\). To see this, add the three labels at every vertex modulo two in each color. Internal edges cancel twice and the pole has odd order. Conversely, any five two-element labels with exclusive or \(T\) satisfy the necessary parity rule. For each color record the mask of its boundary ports and sort the six masks to remove the effect of naming the colors. Each mask has size 1, 3, or 5, and the six sizes add to 10. There is one type with a size-5 mask. The remaining 55 types consist of two size-3 masks chosen with repetition from the ten possible triples. Their four singleton masks are forced by the requirement that each port occur twice. A pole with all 56 types therefore accepts any specific five ordered two-element labels with exclusive or \(T\), by permuting the colors in a witness for its type.
+\section{Introduction and Boundary Labels}
 
-\section{The finite base checks}
+A \emph{Berge--Fulkerson coloring} of a cubic graph or multipole assigns to every edge
+and semiedge a $2$-element subset of six colors $\{0,1,2,3,4,5\}$, encoded as a $6$-bit
+incidence mask of weight~$2$, such that at every cubic vertex the three incident masks
+partition the six colors. In a closed cubic graph, each color induces a perfect matching
+and every edge belongs to exactly two of these six matchings.
 
-Use Petersen vertex labels \(0,\dots,9\) with every edge appearing in \texttt{PETERSEN\_EDGES} in \texttt{verify\_flow\_resistance.py}. For the left drawing of Figure 1, delete the path \(0,1,2\) and map \((e_1,\dots,e_5)\) to \((4,5,3,7,6)\). In the drawing the internal top pair of port vertices \(e_1,e_3\) are adjacent, as are the bottom pair \(e_2,e_4\). For the right drawing, delete vertex 0, trim edge \(2,3\), and map \((f_1,\dots,f_5)\) to \((2,3,1,5,4)\). The two trimmed-edge ends join the outer port vertices \(f_3\) and \(f_5\), respectively. The rest of the adjacency is determined by the Petersen edge list.
+Write $T = 63 = (111111)_2$ for the mask of all six colors and $\oplus$ for bitwise
+exclusive or. Let $P$ be a five-pole (a cubic graph fragment with five dangling
+semiedges at distinct terminals).
 
-Construct \(Z\) by joining \(e_3\) to \(f_1\) and \(e_4\) to \(f_2\), and add a junction \(j\) adjacent to \(e_5,f_5\). Its boundary \((z_1,\ldots,z_5)\) is \((e_1,e_2,f_3,f_4,j)\). Form \(Y_1\) from a central \(M\) and left and right copies \(Z,Z'\). Its five joins are \(z_3e_2,z_4e_1,z'_3e_4,z'_4e_3,z_5z'_5\), and its boundary \((\alpha,\beta,\gamma,\delta,\epsilon)\) is \((z_1,z_2,z'_1,z'_2,e_5)\). These are the joins in Figures 2 and 3. \href{https://arxiv.org/pdf/2604.22501}{Mattiolo, Negrini and Pagani, Figures 1\textendash{}3}
-
-For each color and its prescribed boundary mask, remove the selected port vertices. Enumerate the perfect matchings of the remaining internal graph by choosing one remaining vertex and branching over its remaining neighbors. Restore the selected semiedges for that color. The verifier selects one matching for each of the six colors and checks that every internal edge belongs to exactly two. An edge that has already been chosen twice is excluded from all later choices. If the remaining color domains cannot supply an edge enough times, the branch stops. A separate check of the returned labels verifies the boundary and the partition at every vertex.
-
-
-\noindent\begin{tabularx}{\linewidth}{lccX}
-\toprule
-Pole & Vertices & Profiles with checked witnesses & Largest number of single-color candidates for any fixed port mask\\ \midrule
-\(Z\) & 17 & 56 & 6\\
-\(Y_1\) & 41 & 56 & 109\\
-\bottomrule\end{tabularx}
-
-Run \texttt{python verify\_flow\_resistance.py --n 8} from the repository root with Python 3.10 or later. Add \texttt{--emit} to produce the actual base labels and six matchings for each closed graph in JSON. In the base certificate, each integer in \texttt{edge\_labels} labels the corresponding edge in \texttt{edges}. Bit \(i\) selects zero-based color \(i\). Each integer in \texttt{rows} selects port positions for the corresponding color. The script checks all 56 base profiles on both poles and all 56 transition profiles before reconstructing the full graphs. Full graph checks for \(H_1,\ldots,H_8\) cover orders 42 through 322.
-
-\section{The layer in Figure 4}
-
-Fix arbitrary outer labels \((\alpha,\beta,\gamma,\delta,\epsilon)\) whose exclusive or is \(T\). The left copy of \(Z\) has labels \((\alpha,\beta,a,b,f)\) and the right copy has \((\gamma,\delta,c,d,g)\). The six new junctions have the following incident edges. An old port belongs to the copy of \(Y_{i-1}\), and the two instances of \(Z\) are distinguished by a prime on the right copy.
-
-
-\noindent\begin{tabularx}{\linewidth}{lX}
-\toprule
-Junction & Incident neighbors or semiedges\\ \midrule
-\(A\), top left & \(z_3\), old \(\gamma\), \(C\)\\
-\(C\), top right & \(z'_3\), old \(\delta\), \(A\)\\
-\(B\), bottom left & \(z_4\), old \(\alpha\), \(D\)\\
-\(D\), bottom middle & old \(\beta\), \(B\), \(E\)\\
-\(E\), bottom right & \(z'_4\), \(D\), outer \(\epsilon\)\\
-\(F\), lowest & \(z_5\), \(z'_5\), old \(\epsilon\)\\
-\bottomrule\end{tabularx}
-
-The first two outer labels come from the left copy of \(Z\) and the next two from the right copy. \href{https://arxiv.org/pdf/2604.22501}{Mattiolo, Negrini and Pagani, Figure 4}
-
-The exclusive or of two pair masks can be any even mask of size at most four. Use the same pair twice for size zero. For size two, split its two colors between the pairs and give both pairs the same third color. For size four, partition the colors into two pairs.
-
-Choose \(d\) disjoint from \(\epsilon\) and different from \(\gamma\oplus\delta\). There are six pair masks disjoint from \(\epsilon\), so at most one is excluded. The even mask \(T\oplus\gamma\oplus\delta\oplus d\) has size at most four, since size six would give \(d=\gamma\oplus\delta\). Choose \(c,g\) whose exclusive or is this mask. This makes the right boundary admissible. Next choose \(f\) disjoint from \(g\) and different from \(\alpha\oplus\beta\). Choose \(a,b\) whose exclusive or is \(T\oplus\alpha\oplus\beta\oplus f\). This makes the left boundary admissible.
-
-Give \(DE\) the label \(q=T\oplus d\oplus\epsilon\). It is a pair, as \(d\) and \(\epsilon\) are disjoint. Give \(AC\) any pair label \(r\) disjoint from \(a\cup c\) and give \(BD\) any pair label \(s\) disjoint from \(b\cup q\). Both choices exist since the excluded sets have size at most four. Each new cubic junction now forces the label of any incident old port as the complement of its other two labels. The resulting old boundary is
-
+\begin{lemma}\label{lem:xor-admissible}
+In any Berge--Fulkerson coloring of a five-pole $P$, the five boundary labels
+$(\alpha,\beta,\gamma,\delta,\epsilon)$ satisfy
 \[
- (T\oplus b\oplus s,\ T\oplus s\oplus q,\ T\oplus a\oplus r,\
-    T\oplus c\oplus r,\ T\oplus f\oplus g).
+  \alpha \oplus \beta \oplus \gamma \oplus \delta \oplus \epsilon = T.
 \]
+Conversely, any ordered $5$-tuple of weight-$2$ masks with exclusive or~$T$ corresponds,
+up to permuting color names, to one of $56$ canonical boundary types. Consequently, a
+five-pole realizing all $56$ boundary types accepts every ordered $5$-tuple of weight-$2$
+masks with exclusive or~$T$.
+\end{lemma}
 
-Each entry is a pair by the disjointness choices. Their exclusive or is
+\begin{proof}
+Because $3|V(P)| = 2|E(P)| + 5$, the order $|V(P)|$ is odd. At each vertex $v \in V(P)$,
+the three incident labels partition $T$, so their exclusive or is $T$. Taking the
+exclusive or over all $v \in V(P)$ cancels every internal edge twice and leaves the
+exclusive or of the five boundary labels on one side and $T$ (an odd number of copies) on
+the other.
 
-\[
-\begin{aligned}
- T\oplus a\oplus b\oplus c\oplus q\oplus f\oplus g
- &= (a\oplus b\oplus f)\oplus(c\oplus d\oplus g)\oplus\epsilon \\
- &= (T\oplus\alpha\oplus\beta)\oplus(T\oplus\gamma\oplus\delta)\oplus\epsilon \\
- &= T.
-\end{aligned}
-\]
+Conversely, if five weight-$2$ masks satisfy
+$\alpha \oplus \beta \oplus \gamma \oplus \delta \oplus \epsilon = T$, then each color
+appears at an odd number of ports (size $1$, $3$, or $5$) and the six port-support sizes
+sum to $10$. Sorting the six port-support masks to forget color names leaves either the
+unique all-five type $(5,1,1,1,1,1)$ or one of the $\binom{10+1}{2} = 55$ heavy types
+$(3,3,1,1,1,1)$ determined by an unordered pair (with repetition) of the $10$ triples of
+ports, with the four singleton multiplicities uniquely forced. Permuting the six colors in
+a witness for the canonical type produces a coloring with the exact prescribed boundary
+tuple.
+\end{proof}
 
-The old boundary is admissible, so by induction it has a labeling of \(Y_{i-1}\). Both new copies of \(Z\) accept their prescribed labels by the finite base check. Gluing the labels through the six junctions constructs the requested labeling of \(Y_i\).
+Our main result is the following.
 
-\section{Closing the graph}
+\begin{theorem}\label{thm:main}
+For every integer $n \ge 1$, the five-pole $Y_n$ of Mattiolo, Negrini, and
+Pagani~\cite{MNP} realizes all $56$ five-port boundary types, and the closed snark $H_n$
+(of order $40n + 2$) admits a Berge--Fulkerson cover.
+\end{theorem}
 
-The construction of \(H_n\) joins \(\alpha\) and \(\gamma\) into one edge and attaches \(\beta,\delta,\epsilon\) to a new cubic vertex. Give \(\alpha\) and \(\gamma\) the same label and partition the colors across \(\beta,\delta,\epsilon\). Their five labels have exclusive or \(T\), so \(Y_n\) accepts them. The cover closes with matching labels on the joined semiedges and a partition at the new vertex. This finishes the proof for every \(n\). \href{https://arxiv.org/pdf/2604.22501}{Mattiolo, Negrini and Pagani, Figure 6}
+\section{Finite Base Verification for \texorpdfstring{$Z$}{Z} and \texorpdfstring{$Y_1$}{Y1}}
+
+We follow the construction of $M$, $N$, $Z$, $Y_1$, $Y_i$, and $H_n$ in Sections~3--4
+and Figures~1--6 of~\cite{MNP}. Label the Petersen graph on $\{0,\dots,9\}$ with outer
+$5$-cycle $0\text{--}1\text{--}2\text{--}3\text{--}4\text{--}0$, spokes $i\text{--}(i+5)$
+for $0 \le i \le 4$, and inner $5$-cycle $5\text{--}7\text{--}9\text{--}6\text{--}8\text{--}5$
+(encoded as \texttt{PETERSEN\_EDGES} in \texttt{verify\_flow\_resistance.py}):
+\begin{itemize}
+  \item $M$ (left of Figure~1 in~\cite{MNP}, $7$ vertices): delete the path $0,1,2$ and
+        map $(e_1,\dots,e_5) \mapsto (4,5,3,7,6)$. The top port pair $e_1, e_3$ is
+        adjacent, as is the bottom port pair $e_2, e_4$.
+  \item $N$ (right of Figure~1 in~\cite{MNP}, $9$ vertices): delete vertex~$0$, delete
+        edge $2\text{--}3$, and map $(f_1,\dots,f_5) \mapsto (2,3,1,5,4)$. The two
+        trimmed-edge ends $f_1, f_2$ join $f_3, f_5$, respectively.
+  \item $Z$ (Figure~2 in~\cite{MNP}, $17$ vertices): join $e_3$ to $f_1$ and $e_4$ to
+        $f_2$, and add a cubic junction $j$ adjacent to $e_5$ and $f_5$, with boundary
+        $(z_1,\dots,z_5) = (e_1, e_2, f_3, f_4, j)$.
+  \item $Y_1$ (Figure~3 in~\cite{MNP}, $41$ vertices): combine a central $M$ with left
+        and right copies $Z, Z'$ via joins $z_3 e_2$, $z_4 e_1$, $z'_3 e_4$, $z'_4 e_3$,
+        and $z_5 z'_5$, with boundary
+        $(\alpha,\beta,\gamma,\delta,\epsilon) = (z_1, z_2, z'_1, z'_2, e_5)$.
+\end{itemize}
+
+\begin{proposition}\label{prop:base}
+Both $Z$ and $Y_1$ realize all $56$ five-port boundary types.
+\end{proposition}
+
+\begin{proof}[Computational verification]
+For each pole and each odd port mask $S \subseteq \{1,\dots,5\}$, we remove the vertices
+selected by $S$ and enumerate all perfect matchings of the remaining internal graph by
+exact backtracking (minimum-degree branching), restoring the semiedges in $S$. For each
+of the $56$ boundary types, an exact backtracking search selects one single-color
+matching per color so that every internal edge is covered exactly twice, pruning whenever
+an edge already covered twice is reused or remaining color domains cannot cover an edge
+to multiplicity~$2$. Every returned labeling is independently checked for edge-label
+validity, boundary agreement, and a partition of the six colors at every vertex. The
+verification counts are summarized in Table~\ref{tab:base}.
+\end{proof}
+
+\begin{table}[ht]
+\centering
+\caption{Exact finite base verification for $Z$ and $Y_1$.}
+\label{tab:base}
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+Pole & Vertices & Verified boundary types & Max single-color matchings (any fixed mask) \\
+\midrule
+$Z$   & $17$ & $56$ & $6$   \\
+$Y_1$ & $41$ & $56$ & $109$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The standalone script \texttt{verify\_flow\_resistance.py} (requiring only the Python~3.10+
+standard library) reproduces Proposition~\ref{prop:base}, verifies the transition
+construction across all $56$ boundary types, and constructs and checks complete
+six-matching covers for $H_1,\dots,H_8$ (orders $42$ through $322$, archived in
+\texttt{certificates/bf-flow-resistance.json}):
+\begin{verbatim}
+python3 verify_flow_resistance.py --n 8
+\end{verbatim}
+Adding \texttt{--emit} outputs the full edge labels for all $56$ base covers of $Z$ and
+$Y_1$ together with the six perfect matchings of each closed graph $H_1,\dots,H_n$.
+
+\section{Uniform Extension Through the Recursive Layer}
+
+In Figure~4 of~\cite{MNP}, the five-pole $Y_i$ ($i \ge 2$, order $40i + 1$) is formed
+from $Y_{i-1}$, two new copies $Z$ (left) and $Z'$ (right) of $Z$, and six new cubic
+junctions $A, B, C, D, E, F$ whose incidences are listed in Table~\ref{tab:junctions}.
+The outer boundary of $Y_i$ is $(z_1, z_2, z'_1, z'_2, E)$, where the first four ports
+belong to $Z$ and $Z'$ and the fifth port is the outer semiedge at~$E$.
+
+\begin{table}[ht]
+\centering
+\caption{Incidences of the six junctions in the recursive layer from $Y_{i-1}$ to $Y_i$.}
+\label{tab:junctions}
+\begin{tabular}{@{}ll@{}}
+\toprule
+Junction & Incident neighbors or semiedges \\
+\midrule
+$A$ (top left)      & $z_3$, old $\gamma$, $C$ \\
+$C$ (top right)     & $z'_3$, old $\delta$, $A$ \\
+$B$ (bottom left)   & $z_4$, old $\alpha$, $D$ \\
+$D$ (bottom middle) & old $\beta$, $B$, $E$ \\
+$E$ (bottom right)  & $z'_4$, $D$, outer $\epsilon$ \\
+$F$ (lowest)        & $z_5$, $z'_5$, old $\epsilon$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{lemma}\label{lem:layer}
+Let $(\alpha,\beta,\gamma,\delta,\epsilon)$ be any $5$-tuple of weight-$2$ masks with
+$\alpha \oplus \beta \oplus \gamma \oplus \delta \oplus \epsilon = T$. Then there exist
+weight-$2$ labels on the internal edges of the recursive layer and on the five old ports
+of $Y_{i-1}$ such that:
+\begin{enumerate}
+  \item every junction $A, B, C, D, E, F$ has three incident masks partitioning $T$;
+  \item the left copy $Z$ receives an admissible boundary $(\alpha,\beta,a,b,f)$ with
+        exclusive or $T$;
+  \item the right copy $Z'$ receives an admissible boundary $(\gamma,\delta,c,d,g)$ with
+        exclusive or $T$; and
+  \item the old boundary $(\alpha',\beta',\gamma',\delta',\epsilon')$ of $Y_{i-1}$ has
+        exclusive or $T$.
+\end{enumerate}
+\end{lemma}
+
+\begin{proof}
+Observe first that every even-weight $6$-bit mask $M$ of weight at most~$4$ can be
+written as $p \oplus q$ for two weight-$2$ masks $p, q$: if $|M| = 0$, take $p = q$ to be
+any pair; if $|M| = 2$, split its two colors between $p$ and $q$ and add a common third
+color to both; if $|M| = 4$, partition its four colors into $p$ and $q$.
+
+We assign the labels in four steps:
+\begin{enumerate}
+  \item Choose a pair $d$ disjoint from $\epsilon$ and distinct from
+        $\gamma \oplus \delta$. Since $\epsilon$ has weight~$2$, there are
+        $\binom{4}{2} = 6$ pairs disjoint from $\epsilon$, and at most one equals
+        $\gamma \oplus \delta$, so at least five valid choices exist. The even mask
+        $M_R = T \oplus \gamma \oplus \delta \oplus d$ cannot equal $T$ (since
+        $d \neq \gamma \oplus \delta$), so $|M_R| \le 4$. Choose pairs $c, g$ with
+        $c \oplus g = M_R$; then $\gamma \oplus \delta \oplus c \oplus d \oplus g = T$.
+  \item Similarly, choose a pair $f$ disjoint from $g$ and distinct from
+        $\alpha \oplus \beta$ (at least five choices). Then
+        $M_L = T \oplus \alpha \oplus \beta \oplus f$ has even weight at most~$4$, so
+        there exist pairs $a, b$ with $a \oplus b = M_L$, making
+        $\alpha \oplus \beta \oplus a \oplus b \oplus f = T$.
+  \item Give edge $DE$ the mask $q = T \oplus d \oplus \epsilon$, which has weight~$2$
+        because $d$ and $\epsilon$ are disjoint. Choose any pair $r$ disjoint from
+        $a \cup c$ for edge $AC$, and any pair $s$ disjoint from $b \cup q$ for edge
+        $BD$; both exist because $|a \cup c| \le 4$ and $|b \cup q| \le 4$, leaving at
+        least two colors outside each union.
+  \item At each of the six junctions, two of the three incident edges are now assigned
+        disjoint pairs, forcing the remaining incident edge (an old port of $Y_{i-1}$) to
+        take their complement in $T$:
+        \[
+          (\alpha', \beta', \gamma', \delta', \epsilon')
+          = (T \oplus b \oplus s,\; T \oplus s \oplus q,\;
+             T \oplus a \oplus r,\; T \oplus c \oplus r,\; T \oplus f \oplus g).
+        \]
+\end{enumerate}
+Every entry of this old boundary is a weight-$2$ mask by the disjointness choices
+($b \cap s = \varnothing$, $s \cap q = \varnothing$, $a \cap r = \varnothing$,
+$c \cap r = \varnothing$, $f \cap g = \varnothing$), and every junction $A,\dots,F$
+partitions $T$. Finally, canceling repeated terms $s$, $r$, and four copies of $T$, and
+substituting $q = T \oplus d \oplus \epsilon$, we compute the exclusive or of the old
+boundary:
+\begin{align*}
+  \alpha' \oplus \beta' \oplus \gamma' \oplus \delta' \oplus \epsilon'
+  &= T \oplus a \oplus b \oplus c \oplus q \oplus f \oplus g \\
+  &= (a \oplus b \oplus f) \oplus (c \oplus d \oplus g) \oplus \epsilon \\
+  &= (T \oplus \alpha \oplus \beta) \oplus (T \oplus \gamma \oplus \delta) \oplus \epsilon \\
+  &= \alpha \oplus \beta \oplus \gamma \oplus \delta \oplus \epsilon = T. \qedhere
+\end{align*}
+\end{proof}
+
+\section{Proof of Theorem~\texorpdfstring{\ref{thm:main}}{1}}
+
+\begin{proof}[Proof of Theorem~\ref{thm:main}]
+We prove by induction on $n \ge 1$ that $Y_n$ realizes all $56$ boundary types. The base
+case $n = 1$ is Proposition~\ref{prop:base}. For $n \ge 2$, fix any ordered $5$-tuple
+$(\alpha,\beta,\gamma,\delta,\epsilon)$ of weight-$2$ masks with exclusive or~$T$. By
+Lemma~\ref{lem:layer}, we obtain junction labels, admissible boundaries for both new
+copies $Z$ and $Z'$, and an admissible boundary for $Y_{n-1}$. By
+Proposition~\ref{prop:base} and Lemma~\ref{lem:xor-admissible}, both $Z$ and $Z'$ admit
+Berge--Fulkerson colorings matching their prescribed boundaries; by the induction
+hypothesis and Lemma~\ref{lem:xor-admissible}, $Y_{n-1}$ admits a coloring matching its
+prescribed boundary. Gluing these colorings along the six junctions produces a
+Berge--Fulkerson coloring of $Y_n$ with outer boundary
+$(\alpha,\beta,\gamma,\delta,\epsilon)$. Thus $Y_n$ realizes all $56$ boundary types.
+
+Finally, in Figure~6 of~\cite{MNP}, the closed snark $H_n$ is formed from $Y_n$ by
+joining ports $\alpha$ and $\gamma$ into a single edge and attaching ports
+$\beta, \delta, \epsilon$ to a new cubic vertex~$x$. Assign the same pair $\{0,1\}$ to
+$\alpha$ and $\gamma$, and partition the six colors across $\beta, \delta, \epsilon$ as
+$\{0,1\}, \{2,3\}, \{4,5\}$. The exclusive or of these five boundary masks is
+$\{0,1\} \oplus \{0,1\} \oplus T = T$, so $Y_n$ admits a coloring with these boundary
+labels. Gluing $\alpha$ to $\gamma$ gives an edge with matching label $\{0,1\}$, and the
+three edges incident with $x$ partition the six colors. Hence $H_n$ admits a
+Berge--Fulkerson cover for every $n \ge 1$.
+\end{proof}
+
+\begin{thebibliography}{9}
+\bibitem{MNP}
+D.~Mattiolo, A.~Negrini, and G.~Pagani,
+\href{https://arxiv.org/abs/2604.22501}{arXiv:2604.22501}.
+\end{thebibliography}
+
 \end{document}

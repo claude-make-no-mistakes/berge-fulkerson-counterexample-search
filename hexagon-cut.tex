@@ -1,84 +1,290 @@
-\documentclass[10pt]{article}
-\usepackage[letterpaper,hmargin=0.74in,vmargin=0.67in]{geometry}
+\documentclass[11pt]{article}
+\usepackage[letterpaper,margin=1in]{geometry}
 \usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
 \usepackage{amsmath,amssymb,amsthm,lmodern,microtype,booktabs}
 \usepackage[hidelinks]{hyperref}
-\newtheorem*{theorem}{Theorem}
-\setlength{\emergencystretch}{1em}
-\title{Berge\textendash{}Fulkerson covers across a hexagon}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+
+\title{Berge--Fulkerson Covers Across a Hexagon}
 \author{}
 \date{}
+
 \begin{document}
 \maketitle
-\vspace{-2.5em}
-Let $G$ be a cubic graph with an induced six-cycle, with positions $0,\ldots,5$ in cyclic order. Delete the cycle vertices to obtain the exterior $R$ with six corresponding semiedges. A Berge\textendash{}Fulkerson coloring assigns a pair from six colors to each edge or semiedge, so the three pairs incident to each vertex partition the colors. In a closed graph, the edges of each color form a perfect matching and every edge belongs to two matchings.
 
-\begin{theorem} If the exterior is bipartite, then $G$ has a Berge\textendash{}Fulkerson cover. With three ports in each bipartite class, $G$ is also 3-edge-colorable. Suppose instead that $G$ is a smallest counterexample, and that the six exterior terminal vertices are distinct. Then no partition of the exterior into two classes can have just one internal edge within its classes, or two such edges sharing a vertex. Two such edges in one class are also excluded when the other class contains exactly two ports at opposite positions around the hexagon.
+\begin{abstract}
+Let $G$ be a cubic graph containing an induced $6$-cycle (a hexagon), and let $R$ be its
+exterior obtained by deleting the six cycle vertices. Using signed port-count invariants
+and simultaneous Kempe-switch closure across all $701$ six-port boundary types, we prove
+that if $R$ is bipartite then $G$ admits a Berge--Fulkerson cover, and when each
+bipartite class receives three ports then $G$ is $3$-edge-colorable. Moreover, if $G$ is
+a smallest counterexample to the Berge--Fulkerson conjecture with six distinct exterior
+terminals, then $R$ cannot become bipartite upon deleting any single internal edge or any
+two incident internal edges, nor upon deleting two internal edges in one class when the
+other class holds two opposite ports around the hexagon.
+\end{abstract}
+
+\section{Introduction}
+
+Let $G$ be a cubic graph containing an induced $6$-cycle $C_6$ with vertices labeled
+$0,1,2,3,4,5$ in cyclic order. Deleting the vertices of $C_6$ yields the \emph{exterior}
+$R$ equipped with six corresponding semiedges (ports). A \emph{Berge--Fulkerson coloring}
+assigns a $2$-element subset of six colors $\{0,\dots,5\}$ to each edge and semiedge so
+that the three pairs incident with every vertex partition the six colors. In a closed
+graph, the edges carrying each color form a perfect matching and every edge belongs to
+two of the six matchings.
+
+\begin{theorem}\label{thm:hexagon}
+Let $G$ be a cubic graph with an induced $6$-cycle and exterior $R$.
+\begin{enumerate}
+  \item If $R$ is bipartite, then $G$ admits a Berge--Fulkerson cover; if in addition
+        each bipartite class receives three ports, then $G$ is $3$-edge-colorable.
+  \item Suppose $G$ is a smallest counterexample to the Berge--Fulkerson conjecture and
+        the six exterior terminal vertices in $R$ are distinct. Then no $2$-partition
+        $(+,-)$ of $V(R)$ can have:
+        \begin{itemize}
+          \item exactly one internal edge with both endpoints in the same class;
+          \item exactly two internal edges within the classes sharing a common vertex; or
+          \item exactly two internal edges within the $+$ class, none within the $-$
+                class, and exactly two ports in the $-$ class at opposite positions
+                around the hexagon.
+        \end{itemize}
+\end{enumerate}
 \end{theorem}
 
-\section{Boundary types and simultaneous switches}
+\section{Boundary Types and Simultaneous Kempe Switches}
 
-For each color, record the subset of ports using that color. The exterior has even order, since $3|V(R)|=2|E(R)|+6$. Each color uses an even number of ports by the same parity count. Sort the six subsets, forgetting color names. There are 701 types of six even subsets with each port appearing twice. Both sides can realize a common type precisely when their color names can be aligned and the colorings glued.
+Because $3|V(R)| = 2|E(R)| + 6$, the exterior $R$ has even order. For any
+Berge--Fulkerson coloring of $R$, each color $c$ covers $V(R)$ once by internal edges and
+semiedges, so the subset of ports using color~$c$ has even cardinality. Recording the six
+even port subsets and sorting them to forget color names produces the \emph{boundary type}
+of the coloring. Every port appears in two of the six subsets; exact enumeration gives
+exactly $701$ six-port boundary types. Colorings of $C_6$ and $R$ glue to a
+Berge--Fulkerson cover of $G$ if and only if they realize a common boundary type.
 
-A single color on the hexagon uses a vertex-disjoint subset of its six internal edges, with the unmatched vertices taking their semiedges. Enumerate all such matchings and six-element multisets of them. Keep multisets giving every internal edge multiplicity two. At each vertex this also gives the semiedge multiplicity two. Thus the hexagon realizes exactly 92 types. \href{https://github.com/claude-make-no-mistakes/berge-fulkerson-counterexample-search/blob/main/six_caps.py}{Exact replay}
+On the hexagon $C_6$, a single color uses a matching of internal cycle edges together
+with the semiedges at unmatched cycle vertices. Enumerating all six-element multisets of
+such matchings that cover every cycle edge twice (which automatically gives every
+semiedge multiplicity~$2$) shows that $C_6$ realizes exactly $92$ boundary types,
+denoted $\Pi(C_6)$ (reproduced by \texttt{six\_caps.py}).
 
-Fix an exterior coloring and two colors $a,b$. The edges and semiedges carrying exactly one of $a,b$ give paths and cycles, since every internal vertex has degree zero or two in this subgraph. The paths pair up the boundary ports carrying exactly one of those colors. Swapping $a,b$ along any subset of the paths gives another coloring. For three disjoint pairs of colors, the swaps can be chosen independently and performed together. Each pair's paths depend only on its two colors, even when paths for different pairs share an edge.
+Fix a Berge--Fulkerson coloring of $R$ and two colors $a, b$. The subgraph of internal
+edges and semiedges carrying exactly one of $a, b$ has degree $0$ or $2$ at every vertex
+of $R$, so it decomposes into cycles and open paths pairing up the boundary ports that
+carry exactly one of $a, b$. Swapping $a$ and $b$ along any subset of these open paths
+yields another valid coloring of $R$. Moreover, for any partition of the six colors into
+three disjoint pairs $\{a_1,b_1\}, \{a_2,b_2\}, \{a_3,b_3\}$, swaps on different pairs
+act on disjoint color bits and therefore commute: even when paths for different pairs
+share an edge, choosing an independent subset of paths for each pair and swapping all
+three simultaneously produces a valid coloring of $R$.
 
-Let $A$ be any set containing all types of the exterior. For every type in $A$ and every partition of the six colors into pairs, enumerate the possible pairings of the exclusive ports within each color pair. The type survives only if at least one joint choice of the three port pairings has all simultaneous switch outcomes in $A$. Remove the failing types and repeat until stable. An actual type can never be removed because its realized coloring and actual path pairings always supply a successful choice. This procedure may keep abstract types that no pole realizes.
+This gives a sound closure operator on candidate supersets of the exterior profile
+$\Pi(R)$, extending the five-cut switch method of~\cite{MMT}:
 
-In the absence of a common type, start with all types allowed by the signed counts below, then remove the 92 hexagon types. In the unrestricted case the iteration reduces the remaining 609 types to 561. That set still meets the profile of each tested smaller cap, consisting of all labeled versions of three wires, two junctions, an edge and a wire, a four-vertex star or path, a triangle and junction, a double edge and two wires, and a square and wire. Thus these simultaneous switches and cap tests leave the unrestricted hexagon case unresolved. \href{https://github.com/claude-make-no-mistakes/berge-fulkerson-counterexample-search/blob/main/six-cap-closure.jsonl}{Replay log} \enspace \href{https://doi.org/10.26493/1855-3974.3409.c13}{Five-cut switch method}
+\begin{lemma}\label{lem:closure}
+Let $A$ be a set of six-port boundary types such that $\Pi(R) \subseteq A$. Define the
+simultaneous-switch pruning step by retaining a type $\tau \in A$ if and only if, for
+every partition of the six colors into three disjoint pairs, there exists a choice of
+pairings of the exclusive boundary ports for each color pair whose simultaneous
+path-switch outcomes all lie in $A$. Let $\mathrm{cl}(A)$ be the fixed point obtained by
+iterating this pruning step. Then $\Pi(R) \subseteq \mathrm{cl}(A)$.
+\end{lemma}
 
-\section{Signed port counts}
+\begin{proof}
+Every actual type $\tau \in \Pi(R)$ is witnessed by a coloring of $R$, whose actual
+bichromatic open-path pairings supply a valid joint pairing for every partition into
+three color pairs with all simultaneous switch outcomes in $\Pi(R) \subseteq A$. By
+induction on the iteration step, no element of $\Pi(R)$ is ever removed.
+\end{proof}
 
-Partition the exterior vertices into classes $+$ and $-$. Assume every internal edge crosses the partition except for $t$ edges within the $+$ class. Write $p$ for the number of ports at $+$ vertices and $d$ for the difference between the class sizes. Subtracting the degree sums gives
+Note that within any single color pair, switching all open chains merely exchanges the
+names of its two colors without altering the unordered type (even under simultaneous
+switches on the other two disjoint pairs), so it suffices to check subsets omitting one
+chosen chain per pair.
 
-\[
-3d=2p-6+2t.
-\]
+In the unrestricted case (all $701$ types minus the $92$ hexagon types), one pruning step
+reduces $609$ types to a fixed point of $561$ types. That fixed point still intersects
+every orientation of eight tested smaller six-port caps (three wires, two junctions, an
+edge and a wire, a four-vertex star, a four-vertex path, a triangle and junction, a
+double edge and two wires, and a square and wire; logged in
+\texttt{six-cap-closure.jsonl}), so simultaneous switches and these small caps alone do
+not resolve unrestricted hexagons.
 
-For a color $c$, let $m_c$ count its occurrences on the $t$ exceptional edges. The same count within that color gives
+\section{Signed Port Counts and Bipartite Exteriors}
 
-\[
-\#(+\text{ ports using }c)-\#(-\text{ ports using }c)=d-2m_c.
-\]
+Partition $V(R)$ into two classes $+$ and $-$, and assume that every internal edge of $R$
+crosses between $+$ and $-$ except for $t$ exceptional internal edges lying within the
+$+$ class (and none within the $-$ class). Write $p$ for the number of ports attached to
+vertices in $+$ (counted with multiplicity if terminals coincide) and set
+$d = |+| - |-|$. Counting crossing edges from both sides gives
+$3|+| - p - 2t = 3|-| - (6 - p)$, whence
+\begin{equation}\label{eq:deg-count}
+  3d = 2p - 6 + 2t.
+\end{equation}
+For any color $c$ in a Berge--Fulkerson coloring of $R$, let $m_c$ denote the number of
+the $t$ exceptional edges carrying color~$c$. Counting crossing edges of color~$c$ from
+both sides gives $|+| - \#(+\text{ ports using } c) - 2m_c = |-| - \#(-\text{ ports using } c)$,
+and therefore
+\begin{equation}\label{eq:signed-count}
+  \#(+\text{ ports using } c) - \#(-\text{ ports using } c) = d - 2m_c.
+\end{equation}
+Across the six colors, the multiset $\{m_c\}_{c=0}^{5}$ is constrained as follows:
+\begin{itemize}
+  \item $t = 0$: $(0,0,0,0,0,0)$;
+  \item $t = 1$: $(0,0,0,0,1,1)$;
+  \item $t = 2$ with two incident exceptional edges: their labels are disjoint at the
+        shared vertex, forcing $(0,0,1,1,1,1)$;
+  \item $t = 2$ with two disjoint exceptional edges: letting their weight-$2$ labels
+        overlap in $0$, $1$, or $2$ colors gives $(0,0,1,1,1,1)$, $(0,0,0,1,1,2)$, or
+        $(0,0,0,0,2,2)$.
+\end{itemize}
 
-Across all six colors, the multiset of $m_c$ consists of six zeros for $t=0$ and two ones with four zeros for $t=1$. For two incident exceptions the labels are disjoint, giving four ones and two zeros. For two disjoint exceptions the possible multiplicities follow by letting their two-element labels overlap in zero, one, or two colors. Apply these tests to every one of the 701 types before the switch iteration.
+\begin{proof}[Proof of Theorem~\ref{thm:hexagon}(1)]
+Suppose $R$ is bipartite ($t = 0$). By~\eqref{eq:deg-count}, $3d = 2p - 6$, so
+$p \in \{0, 3, 6\}$. Up to dihedral symmetry of the hexagon and exchanging $+$ and $-$,
+the set of $+$ ports has four representatives: $\varnothing$, $\{0,1,2\}$, $\{0,1,3\}$,
+and $\{0,2,4\}$.
 
-For a bipartite exterior, $p$ is $0,3$, or $6$. Up to cyclic symmetry and exchange of the two classes, the $+$ positions have representatives $\varnothing$, $\{0,1,2\}$, $\{0,1,3\}$, and $\{0,2,4\}$. The stable set avoiding all hexagon types is empty in every case. The exterior has at least one coloring. To see this, group same-class ports into triples and add a new vertex for each triple, on the opposite side from its ports. This gives a cubic bipartite graph, possibly with parallel edges. Hall's theorem supplies a perfect matching, and repeating gives a decomposition into three matchings. Doubling each color and restricting to the exterior gives the stated coloring. Its profile must therefore meet that of the hexagon, proving the first assertion.
+First, $R$ admits at least one $3$-edge-coloring (and hence, by doubling each color, at
+least one Berge--Fulkerson coloring): since both $p$ and $6 - p$ are multiples of~$3$,
+group same-class ports into triples and attach each triple to a new vertex placed in the
+opposite class. The resulting graph is a $3$-regular bipartite multigraph (with
+$|+| + (6-p)/3 = |-| + p/3$ vertices per side), which decomposes into three perfect
+matchings by Hall's/K\H{o}nig's theorem. Restricting to $R$ gives a $3$-edge-coloring of
+$R$.
 
-When $p=3$, use the three colors without doubling them. A type is then a partition of the six ports into three even color supports, with the same number of $+$ and $-$ ports of each color. Up to color names there are 16 possible types for each of the three $+$ arrangements. Compute the hexagon types by assigning one color to each cycle edge, requiring consecutive edges to have different colors and giving the missing color to each semiedge. Use the same path-switch test with one color pair at a time. For the successive $+$ arrangements above with $p=3$, the sizes of the sets avoiding the hexagon decrease as $11,8,2,0$, then $10,3,0$, and then $5,0$. The exterior starts with a 3-edge-coloring from the bipartite completion, so it must have one that extends to the hexagon.
+For Berge--Fulkerson covers, let $E_0$ be the subset of the $701$ six-port types
+satisfying~\eqref{eq:signed-count} with $m_c = 0$ for all $c$. Exact computation in
+\texttt{six\_caps.py} shows that $\mathrm{cl}(E_0 \setminus \Pi(C_6)) = \varnothing$ in
+all four cases (iteration sizes: $119, 94, 20, 0$ for $\varnothing$; $153, 122, 38, 0$ for
+$\{0,1,2\}$; $144, 55, 0$ for $\{0,1,3\}$; and $77, 0$ for $\{0,2,4\}$). Since
+$\Pi(R) \neq \varnothing$, Lemma~\ref{lem:closure} forces
+$\Pi(R) \cap \Pi(C_6) \neq \varnothing$, so $G$ has a Berge--Fulkerson cover.
 
-For one exceptional edge inside $+$, $p$ is $2$ or $5$. For two, $p$ is $1$ or $4$. The following table gives a wire completion whose profile is disjoint from the stable set of exterior types avoiding the hexagon. The three wires are edges pairing up exterior terminals, with matching labels at the two ports of a wire.
+When $p = 3$ (so $d = 0$), apply the same method directly to $3$-edge-colorings without
+doubling. A $3$-color boundary type is an unordered partition of the six ports into three
+even color supports, each containing equally many $+$ and $-$ ports. For each of the
+three $p = 3$ representatives, there are $16$ eligible $3$-color types. Computing the
+$3$-color boundary types realized by proper $3$-edge-colorings of $C_6$ and applying the
+single-pair Kempe-switch closure removes all types avoiding the hexagon: the surviving
+counts drop as $11, 8, 2, 0$ for $\{0,1,2\}$; $10, 3, 0$ for $\{0,1,3\}$; and $5, 0$ for
+$\{0,2,4\}$. Since $R$ admits at least one $3$-edge-coloring, its $3$-color profile meets
+that of $C_6$, so $G$ is $3$-edge-colorable.
+\end{proof}
 
-\begin{center}
-\begin{tabular}{@{}llrl@{}}
+\section{Near-Bipartite Exteriors and Bridgeless Wire Completions}
+
+We now prove Theorem~\ref{thm:hexagon}(2). Assume $G$ is a smallest counterexample
+(minimum order among simple bridgeless cubic graphs with no Berge--Fulkerson cover) with
+an induced $6$-cycle $C_6$ and six distinct exterior terminals in $R$. By standard
+small-cut reductions~\cite{MMT}, $G$ is cyclically $5$-edge-connected.
+
+\begin{lemma}\label{lem:wire-bridgeless}
+The exterior $R$ is connected and bridgeless. Moreover, closing $R$ by any matching of
+three wire edges pairing up its six distinct terminals produces a smaller bridgeless
+cubic multigraph that admits a Berge--Fulkerson cover.
+\end{lemma}
+
+\begin{proof}
+Because the six exterior terminals are distinct, every vertex of $R$ has internal degree
+at least~$2$, so every connected component of $R$ contains a cycle. Two components would
+each require at least $5$ ports (since each complement includes $C_6$), impossible with
+six ports total; hence $R$ is connected.
+
+Suppose $R$ had an internal bridge $e = uv$ separating $R$ into components $R_1$ and
+$R_2$. In each $R_i$, every vertex other than its endpoint of $e$ has internal degree at
+least~$2$, and that endpoint has degree at least~$1$ in $R_i$. A tree on at least two
+vertices has at least two leaves, and a $1$-vertex component has degree~$0$, so neither
+$R_1$ nor $R_2$ can be a tree; both contain cycles. Since each complement in $G$ contains
+$C_6$, cyclic $5$-edge-connectivity forces each $R_i$ to carry at least $4$ ports in
+addition to $e$, requiring at least $8$ ports total, a contradiction. Thus $R$ is
+bridgeless.
+
+Adding three wires matching the six distinct terminals gives a cubic multigraph $G'$ on
+$|V(G)| - 6$ vertices with no loops. Every edge of $R$ lies on a cycle in $R$, and each
+wire closes to a cycle via a path in the connected graph $R$, so $G'$ is bridgeless.
+
+It remains to verify by strong induction on $|V(H)|$ that every bridgeless cubic
+multigraph $H$ with $|V(H)| < |V(G)|$ admits a Berge--Fulkerson cover. Work component by
+component; no component contains a loop (whose third incident edge would be a bridge). If
+$H$ is simple, minimality of $G$ supplies a cover. If $H$ consists of a triple edge,
+partition the six colors into three pairs on its three edges. Otherwise $H$ contains a
+double edge $xy$ with external edges $xx'$ and $yy'$. We must have $x' \neq y'$, or else
+the third edge at $x' = y'$ would be a bridge. Deleting $x, y$ and adding a single edge
+$e^* = x'y'$ produces a strictly smaller cubic multigraph $H'$ that remains bridgeless
+(any cycle in $H$ through $xx'$ traverses one edge of $xy$ and exits via $yy'$, yielding
+a cycle through $e^*$ in $H'$, and all other cycles persist). By induction, $H'$ admits a
+cover; assigning the label of $e^*$ to both $xx'$ and $yy'$ and splitting the remaining
+four colors across the two parallel edges $xy$ lifts the cover to $H$. Applying this to
+$H = G'$ completes the proof.
+\end{proof}
+
+\begin{proof}[Proof of Theorem~\ref{thm:hexagon}(2)]
+Consider a partition $(+,-)$ of $V(R)$ with $t \in \{1,2\}$ exceptional edges inside $+$.
+By~\eqref{eq:deg-count}:
+\begin{itemize}
+  \item For $t = 1$, $3d = 2p - 4$, so $p \in \{2, 5\}$. Up to dihedral symmetry of $C_6$,
+        the $+$ port sets have representatives $\{0,1\}$, $\{0,2\}$, $\{0,3\}$, and
+        $\{0,1,2,3,4\}$.
+  \item For $t = 2$, $3d = 2p - 2$, so $p \in \{1, 4\}$. Up to dihedral symmetry, the $+$
+        port sets have representatives $\{0\}$, $\{0,1,2,3\}$, $\{0,1,2,4\}$, and
+        $\{0,1,3,4\}$.
+\end{itemize}
+For $t = 1$ and for two incident exceptional edges, let $E$ be the set of types allowed
+by~\eqref{eq:signed-count} with multiplicities $(0,0,0,0,1,1)$ and $(0,0,1,1,1,1)$,
+respectively. For two (possibly disjoint) exceptional edges in $+$ with opposite $-$
+ports (represented by $+$ ports $\{0,1,3,4\}$), let $E$ be the union of the type sets
+allowed by~\eqref{eq:signed-count} over all three label overlaps ($0$, $1$, or $2$ shared
+colors). Since a Kempe switch may change the overlap between two disjoint exceptional
+edges, taking the union before closure ensures $\Pi(R) \subseteq E$.
+
+If $G$ has no Berge--Fulkerson cover, then $\Pi(R) \subseteq E \setminus \Pi(C_6)$, and
+hence $\Pi(R) \subseteq \mathrm{cl}(E \setminus \Pi(C_6))$ by Lemma~\ref{lem:closure}.
+For each row of Table~\ref{tab:wires}, \texttt{six\_caps.py} computes the exact fixed
+point $\mathrm{cl}(E \setminus \Pi(C_6))$ and enumerates the profile of the listed
+three-wire completion (all types whose port labels agree across each wire). In every row,
+the fixed point is disjoint from the wire completion's profile. However, by
+Lemma~\ref{lem:wire-bridgeless}, closing $R$ with that wire completion yields a smaller
+bridgeless cubic multigraph admitting a Berge--Fulkerson cover, whose restriction to $R$
+realizes a type in the wire completion's profile, contradicting
+$\Pi(R) \subseteq \mathrm{cl}(E \setminus \Pi(C_6))$.
+\end{proof}
+
+\begin{table}[ht]
+\centering
+\caption{Simultaneous-switch closure sizes and separating wire completions for near-bipartite exteriors.}
+\label{tab:wires}
+\begin{tabular}{@{}llrrl@{}}
 \toprule
-Exceptional edges & Positive ports & Number of surviving types & Wire completion \\
+Exceptional edges & Positive ports & Eligible & Surviving types & Wire completion \\
 \midrule
-One & $0,1$ & 368 & $01,23,45$ \\
-One & $0,2$ & 0 & $01,23,45$ \\
-One & $0,3$ & 248 & $03,12,45$ \\
-One & $0,1,2,3,4$ & 222 & $01,25,34$ \\
-Two sharing a vertex & $0$ & 222 & $03,12,45$ \\
-Two sharing a vertex & $0,1,2,3$ & 368 & $01,23,45$ \\
-Two sharing a vertex & $0,1,2,4$ & 0 & $01,23,45$ \\
-Two sharing a vertex & $0,1,3,4$ & 248 & $01,25,34$ \\
-Two in one class & $0,1,3,4$ & 286 & $01,25,34$ \\
+One & $0,1$         & $522$ & $368$ & $01,23,45$ \\
+One & $0,2$         & $522$ & $0$   & $01,23,45$ \\
+One & $0,3$         & $522$ & $248$ & $03,12,45$ \\
+One & $0,1,2,3,4$   & $425$ & $222$ & $01,25,34$ \\
+Two sharing a vertex & $0$         & $425$ & $222$ & $03,12,45$ \\
+Two sharing a vertex & $0,1,2,3$   & $522$ & $368$ & $01,23,45$ \\
+Two sharing a vertex & $0,1,2,4$   & $522$ & $0$   & $01,23,45$ \\
+Two sharing a vertex & $0,1,3,4$   & $522$ & $248$ & $01,25,34$ \\
+Two in one class     & $0,1,3,4$   & $649$ & $286$ & $01,25,34$ \\
 \bottomrule
 \end{tabular}
-\end{center}
+\end{table}
 
-The one-edge and incident-two-edge rows cover all arrangements by rotations and reflections. The last row includes all label overlaps for two defects, and the two negative positions are opposite. The replay enumerates each wire completion from the equality constraints on its labels. For each row, it verifies that an exterior profile avoiding the hexagon would miss the stated completion.
+\section{Reproduction}
 
-\section{The smaller completions are bridgeless}
+Run \texttt{python3 six\_caps.py} from the repository root to reproduce all boundary-type
+counts, simultaneous-switch closure sequences, and separating wire completions reported
+above (archived in \texttt{six-cap-closure.jsonl}).
 
-A smallest counterexample is cyclically $5$-edge-connected. With distinct exterior terminals, each vertex of $R$ has internal degree at least two, so each component contains a cycle. Two components would require at least five ports each because the complement of each includes the hexagon, which is impossible with only six ports. If an internal bridge splits $R$, each side has minimum degree two except possibly at the bridge endpoint, which retains degree at least one. Each side contains a cycle. Its cut in $G$ is the bridge plus its ports, so each side needs at least four ports. This is also impossible. Thus $R$ is connected and bridgeless. \href{https://doi.org/10.26493/1855-3974.3409.c13}{Small-cut reduction}
+\begin{thebibliography}{9}
+\bibitem{MMT}
+E.~M\'{a}\v{c}ajov\'{a}, G.~Mazzuoccolo, and G.~Tabarelli,
+Ars Math.\ Contemp., \href{https://doi.org/10.26493/1855-3974.3409.c13}{doi:10.26493/1855-3974.3409.c13}.
+\end{thebibliography}
 
-Adding three wires between distinct terminals gives a smaller bridgeless cubic multigraph. Parallel edges introduced by the wires are harmless for minimality. In a bridgeless cubic component, a double edge has two distinct external neighbors, unless the component consists of a triple edge. If the two external neighbors coincided, that neighbor's third edge would be a bridge. Suppress the double edge and its two endpoints into a single edge between the external neighbors. Other edges retain their cycles, and the new edge lies on the cycle obtained from an old cycle through the two external edges. Any coloring lifts by assigning the replaced edge's pair to both external edges and splitting the other four colors between the two parallel edges. A triple edge itself admits a coloring by splitting all six colors into three pairs. Induction therefore extends simple-graph minimality to these smaller multigraphs.
-
-The graph closed by the wire completion admits a coloring by minimality. Restricting it to $R$ realizes one of the wire completion's types. If $R$ had no common type with the hexagon, the iteration would put its entire profile in the stable set, contradicting the disjointness in the table. This proves the remaining assertions.
-
-
-\smallskip
-Run \texttt{python six\_caps.py} to reproduce the enumerations. The source and counts are in the \href{https://github.com/claude-make-no-mistakes/berge-fulkerson-counterexample-search}{research repository}.
 \end{document}

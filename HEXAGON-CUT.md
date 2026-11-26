@@ -66,8 +66,8 @@ The search reorders the ports, switches pairs of internal edges, and moves indiv
 
 The first run used 44 seed fragments and 5,000 mutation attempts. It scored 3,121 splices. The best score was nine common types, attained on a 20-vertex splice. Direct enumeration of its exterior perfect matchings also gives nine, and its six-matchings certificate checks the full graph. The scored inputs can include isomorphic graphs. [Run log](hexagon-search.jsonl) · [Cover](certificates/hexagon-best-cover.json)
 
-~~~sh
-python six_caps.py
-python search_hexagons.py cyclic-controls.g6 --trials 5000
-python search_hexagons.py cyclic-controls.g6 --trials 5000 --min-order 38 --seed 20261215
-~~~
+```sh
+python3 six_caps.py
+python3 search_hexagons.py cyclic-controls.g6 --trials 5000
+python3 search_hexagons.py cyclic-controls.g6 --trials 5000 --min-order 38 --seed 20261215
+```

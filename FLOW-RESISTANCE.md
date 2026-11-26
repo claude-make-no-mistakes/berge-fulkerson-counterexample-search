@@ -21,7 +21,7 @@ For each color and its prescribed boundary mask, remove the selected port vertic
 | \(Z\) | 17 | 56 | 6 |
 | \(Y_1\) | 41 | 56 | 109 |
 
-Run `python verify_flow_resistance.py --n 8` from the repository root with Python 3.10 or later. Add `--emit` to produce the actual base labels and six matchings for each closed graph in JSON. In the base certificate, each integer in `edge_labels` labels the corresponding edge in `edges`. Bit \(i\) selects zero-based color \(i\). Each integer in `rows` selects port positions for the corresponding color. The script checks all 56 base profiles on both poles and all 56 transition profiles before reconstructing the full graphs. Full graph checks for \(H_1,\ldots,H_8\) cover orders 42 through 322.
+Run `python3 verify_flow_resistance.py --n 8` from the repository root with Python 3.10 or later (standard library only). Add `--emit` to produce the actual base labels and six matchings for each closed graph in JSON (archived in `certificates/bf-flow-resistance.json`). In the base certificate, each integer in `edge_labels` labels the corresponding edge in `edges`. Bit \(i\) selects zero-based color \(i\). Each integer in `rows` selects port positions for the corresponding color. The script checks all 56 base profiles on both poles and all 56 transition profiles before reconstructing the full graphs. Full graph checks for \(H_1,\ldots,H_8\) cover orders 42 through 322.
 
 ## The layer in Figure 4
 
