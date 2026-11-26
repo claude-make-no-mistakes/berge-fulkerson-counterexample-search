@@ -54,6 +54,29 @@ def edge_switch(graph, rng):
     return None
 
 
+def move_terminal(graph, terminals, rng):
+    """Transfer one dangling edge by replacing an ordinary edge."""
+    edges = list(graph.edges())
+    for _ in range(200):
+        slot = rng.randrange(len(terminals))
+        old = terminals[slot]
+        u, new = rng.choice(edges)
+        if rng.randrange(2):
+            new, u = u, new
+        if new in terminals or u == old or graph.has_edge(u, old):
+            continue
+        changed = graph.copy()
+        changed.remove_edge(u, new)
+        if old in nx.single_source_shortest_path_length(changed, u, cutoff=3):
+            continue
+        changed.add_edge(u, old)
+        if nx.is_connected(changed):
+            moved = list(terminals)
+            moved[slot] = new
+            return changed, moved
+    return None
+
+
 def score(profile, orientations):
     best = min((profile & shape).bit_count() for shape in orientations)
     return best, profile.bit_count()
@@ -92,7 +115,8 @@ def bipartite_restart(half_order):
     return {"best_score": list(score(profile, pentagon_orientations())), "best_pole": encode(graph, terminals)}
 
 
-def scan(sources, trials, seed, export, restart=None, avoid_all_ports=False, target=None, cyclic_five=False):
+def scan(sources, trials, seed, export, restart=None, avoid_all_ports=False, target=None, cyclic_five=False,
+         terminal_moves=False):
     if target is None:
         target = nx.cycle_graph(PORTS), list(range(PORTS))
         orientations = pentagon_orientations()
@@ -165,12 +189,20 @@ def scan(sources, trials, seed, export, restart=None, avoid_all_ports=False, tar
         raise RuntimeError("No input graph yielded a pentagon complement")
     initial = min(key for key, _, _ in pool)
     without_all_ports = 0
+    accepted_moves = 0
     for _ in range(trials * 4):
         if sum(scores.values()) == trials:
             break
         parents = recent if restart is not None and recent and rng.randrange(4) == 0 else pool
         _, graph, terminals = rng.choice(parents)
-        changed = edge_switch(graph, rng)
+        transfer = terminal_moves and rng.randrange(3) == 0
+        if transfer:
+            moved = move_terminal(graph, terminals, rng)
+            if moved is None:
+                continue
+            changed, terminals = moved
+        else:
+            changed = edge_switch(graph, rng)
         if changed is None:
             continue
         if restart is not None and rng.randrange(3) == 0:
@@ -192,6 +224,7 @@ def scan(sources, trials, seed, export, restart=None, avoid_all_ports=False, tar
             continue
         compatible = key[-2]
         scores[compatible] += 1
+        accepted_moves += int(transfer)
         without_all_ports += not bool(profile & all_ports)
         if compatible == 0:
             outcome = candidate(changed, terminals, profile)
@@ -210,6 +243,7 @@ def scan(sources, trials, seed, export, restart=None, avoid_all_ports=False, tar
             "best_pole": encode(pole, terminals), "avoid_all_ports": avoid_all_ports,
             "target_pole": encode(*target),
             "without_all_ports": without_all_ports,
+            "terminal_moves": accepted_moves,
             "evaluated": sum(scores.values()), "minimum_common_type_histogram": dict(sorted(scores.items())),
             "bridge_rejections": bridge_rejections, "cyclic_rejections": cyclic_rejections, "witness": None}
 
@@ -225,6 +259,7 @@ if __name__ == "__main__":
     initial.add_argument("--bipartite-restart", type=int, metavar="HALF_ORDER")
     parser.add_argument("--target-pole", type=Path, help="Glue to the saved best pole instead of a pentagon")
     parser.add_argument("--cyclic-five", action="store_true", help="Only score pentagon splices with no smaller cyclic cut")
+    parser.add_argument("--move-terminals", action="store_true", help="Also change which vertices carry the dangling edges")
     parser.add_argument("--avoid-all-ports", action="store_true",
                         help="Prefer profiles excluding any color that uses all five ports")
     args = parser.parse_args()
@@ -242,5 +277,6 @@ if __name__ == "__main__":
     if args.target_pole is not None:
         target_record = json.loads(args.target_pole.read_text(encoding="utf-8-sig").splitlines()[-1])
         target = decode(target_record["best_pole"])
-    result = scan(graphs, args.trials, args.seed, args.proof_prefix, restart, args.avoid_all_ports, target, args.cyclic_five)
+    result = scan(graphs, args.trials, args.seed, args.proof_prefix, restart, args.avoid_all_ports, target, args.cyclic_five,
+                  args.move_terminals)
     print(json.dumps(result), flush=True)
